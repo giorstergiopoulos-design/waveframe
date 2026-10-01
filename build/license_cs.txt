@@ -1,0 +1,13 @@
+Licenční smlouva — Waveframe
+
+Waveframe je distribuován jako software s uzavřeným zdrojovým kódem, všechna práva vyhrazena. Používáním této aplikace souhlasíte s tím, že je poskytována "tak jak je", bez jakékoli záruky, a autor nenese žádnou odpovědnost za ztrátu dat nebo škodu vzniklou jejím používáním.
+
+Waveframe používá následující open-source komponenty, každou pod vlastní licencí:
+- Electron — licence MIT
+- music-metadata — licence MIT
+- adm-zip — licence MIT
+- FFmpeg — licence LGPL (přes váš systém nebo volitelné stažení na vyžádání z Nastavení)
+
+Úplný text licencí třetích stran: v aplikaci, Nastavení → O aplikaci → "Návod, historie verzí a nápověda" → záložka "Licence".
+
+Kliknutím na "Souhlasím" přijímáte výše uvedené podmínky.

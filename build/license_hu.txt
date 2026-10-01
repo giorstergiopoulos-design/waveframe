@@ -1,0 +1,13 @@
+Licencszerződés — Waveframe
+
+A Waveframe zárt forráskódú szoftverként kerül terjesztésre, minden jog fenntartva. Az alkalmazás használatával elfogadja, hogy az "ahogy van" alapon, mindenféle garancia nélkül kerül rendelkezésre bocsátásra, és a szerző nem vállal felelősséget a használatból eredő adatvesztésért vagy kárért.
+
+A Waveframe az alábbi nyílt forráskódú összetevőket használja, mindegyiket a saját licence alatt:
+- Electron — MIT licenc
+- music-metadata — MIT licenc
+- adm-zip — MIT licenc
+- FFmpeg — LGPL licenc (a rendszerén keresztül, vagy opcionális, igény szerinti letöltéssel a Beállításokból)
+
+A harmadik féltől származó licencek teljes szövege: az alkalmazáson belül, Beállítások → Névjegy → "Útmutató, verziótörténet és súgó" → "Licenc" fül.
+
+Az "Elfogadom" gombra kattintva elfogadja a fenti feltételeket.

@@ -1,0 +1,13 @@
+Käyttöoikeussopimus — Waveframe
+
+Waveframe jaetaan suljetun lähdekoodin ohjelmistona, kaikki oikeudet pidätetään. Käyttämällä tätä sovellusta hyväksyt, että se tarjotaan "sellaisenaan", ilman minkäänlaista takuuta, eikä tekijä ole vastuussa käytöstä aiheutuvasta tietojen menetyksestä tai vahingosta.
+
+Waveframe käyttää seuraavia avoimen lähdekoodin komponentteja, kukin omalla lisenssillään:
+- Electron — MIT-lisenssi
+- music-metadata — MIT-lisenssi
+- adm-zip — MIT-lisenssi
+- FFmpeg — LGPL-lisenssi (järjestelmäsi kautta tai valinnainen lataus pyynnöstä Asetuksista)
+
+Kolmannen osapuolen lisenssien täydellinen teksti: sovelluksen sisällä, Asetukset → Tietoja → "Opas, muutosloki ja ohje" → välilehti "Lisenssi".
+
+Napsauttamalla "Hyväksyn" hyväksyt yllä olevat ehdot.

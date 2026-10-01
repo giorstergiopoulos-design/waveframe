@@ -1,0 +1,13 @@
+Lisans Sözleşmesi — Waveframe
+
+Waveframe, kapalı kaynak kodlu bir yazılım olarak, tüm hakları saklı tutularak dağıtılmaktadır. Bu uygulamayı kullanarak, herhangi bir garanti olmaksızın "olduğu gibi" sunulduğunu ve yazarın kullanımdan kaynaklanan herhangi bir veri kaybı veya zarardan sorumlu olmadığını kabul edersiniz.
+
+Waveframe aşağıdaki açık kaynaklı bileşenleri, her biri kendi lisansı altında kullanır:
+- Electron — MIT lisansı
+- music-metadata — MIT lisansı
+- adm-zip — MIT lisansı
+- FFmpeg — LGPL lisansı (sisteminiz üzerinden veya Ayarlar'dan isteğe bağlı indirme ile)
+
+Üçüncü taraf lisanslarının tam metni: uygulama içinde, Ayarlar → Hakkında → "Rehber, sürüm geçmişi ve yardım" → "Lisans" sekmesi.
+
+"Kabul Ediyorum"a tıklayarak yukarıdaki şartları kabul etmiş olursunuz.

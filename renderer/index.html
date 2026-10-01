@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' blob: http: https:; connect-src 'self' blob: http: https:;" />
+<title>Waveframe</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <canvas id="bgCanvas"></canvas>
+
+  <header class="titlebar">
+    <div class="titlebar-drag">
+      <div class="brand-icon animated-logo" id="brandIcon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path class="bar b1" d="M2 10v3"/><path class="bar b2" d="M6 6v11"/><path class="bar b3" d="M10 3v18"/><path class="bar b4" d="M14 8v7"/><path class="bar b5" d="M18 5v13"/><path class="bar b6" d="M22 10v3"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">Waveframe</span>
+        <span class="brand-version" id="brandVersion">v1.5.0</span>
+      </div>
+    </div>
+    <div class="titlebar-controls">
+      <button id="btnThemeToggle" class="win-btn win-btn-theme" title="Φωτεινή / Σκοτεινή λειτουργία" aria-label="Φωτεινή / Σκοτεινή λειτουργία">☀️</button>
+      <button id="btnMiniMode" class="win-btn" title="Μίνι λειτουργία" aria-label="Μίνι λειτουργία">&#8865;</button>
+      <button id="btnMinimize" class="win-btn" title="Ελαχιστοποίηση" aria-label="Ελαχιστοποίηση">&#8211;</button>
+      <button id="btnMaximize" class="win-btn" title="Μεγιστοποίηση" aria-label="Μεγιστοποίηση">&#9633;</button>
+      <button id="btnCloseWin" class="win-btn win-btn-close" title="Κλείσιμο" aria-label="Κλείσιμο">&#10005;</button>
+    </div>
+  </header>
+
+  <div class="app-shell">
+    <nav class="tab-rail">
+      <button class="tab-btn active" data-tab="player">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+        <span data-i18n="tab.player">Αναπαραγωγή</span>
+      </button>
+      <button class="tab-btn" data-tab="enhance">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+        <span data-i18n="tab.enhance">Ενισχυτής Ήχου</span>
+      </button>
+      <button class="tab-btn" data-tab="export">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span data-i18n="tab.export">Εξαγωγή</span>
+      </button>
+      <button class="tab-btn" data-tab="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span data-i18n="tab.settings">Settings</span>
+      </button>
+    </nav>
+
+    <main class="tab-content">
+
+      <!-- PLAYER TAB -->
+      <section id="tab-player" class="tab-pane active">
+        <div class="visualizer-tabs">
+          <button class="pill-btn" id="btnVisPicker">🎨 <span data-i18n="player.visualization">Οπτικοποίηση</span></button>
+          <button class="pill-btn" id="btnTogglePlaylist" data-i18n="player.playlist">Λίστα αναπαραγωγής</button>
+        </div>
+        <div class="vis-picker-grid dep-hidden" id="visPickerGrid"></div>
+        <div class="visualizer-wrap" id="visualizerWrap">
+          <canvas id="visualizer" width="900" height="200"></canvas>
+          <div class="vis-album-art" id="visAlbumArt"><img id="visAlbumArtImg" alt="" /><span id="visAlbumArtFallback">🎵</span></div>
+        </div>
+
+        <div class="now-playing">
+          <div class="now-playing-row">
+            <div class="album-art" id="albumArt"><span id="albumArtFallback">🎵</span><img id="albumArtImg" alt="" /></div>
+            <div class="now-playing-info">
+              <div class="track-name" id="trackName" data-i18n="player.noTrack">Κανένα κομμάτι φορτωμένο</div>
+              <div class="track-sub" id="trackSub"></div>
+            </div>
+          </div>
+          <div class="time-row">
+            <input type="range" id="seek" min="0" max="1000" value="0" step="1" />
+            <span id="timeLabel">0:00 / 0:00</span>
+          </div>
+        </div>
+
+        <div class="transport">
+          <button id="btnPrev" title="Προηγούμενο" aria-label="Προηγούμενο">⏮</button>
+          <button id="btnPlay" class="play-btn" title="Αναπαραγωγή" aria-label="Αναπαραγωγή">▶</button>
+          <button id="btnNext" title="Επόμενο" aria-label="Επόμενο">⏭</button>
+          <button id="btnShuffle" class="toggle-icon" title="Τυχαία αναπαραγωγή" aria-label="Τυχαία αναπαραγωγή">🔀</button>
+          <button id="btnRepeat" class="toggle-icon" title="Επανάληψη" aria-label="Επανάληψη">🔁</button>
+          <button id="btnMute" class="toggle-icon" title="Σίγαση" aria-label="Σίγαση">🔊</button>
+          <input type="range" id="volume" min="0" max="100" value="80" />
+        </div>
+
+        <div class="sources">
+          <label class="source-btn">
+            <input type="file" id="fileInput" accept="audio/*" multiple hidden />
+            📁 <span data-i18n="player.upload">Ανέβασμα αρχείων</span>
+          </label>
+          <button class="source-btn" id="btnUrl">🔗 URL</button>
+          <button class="source-btn" id="btnMic" data-i18n="player.mic">🎤 Μικρόφωνο</button>
+          <button class="source-btn" id="btnTestTone" data-i18n="player.testTone">🎵 Δοκιμαστικός τόνος</button>
+        </div>
+
+        <div class="playlist-drawer" id="playlistDrawer">
+          <div class="playlist-drawer-header">
+            <h2 data-i18n="player.playlistTitle">Λίστα αναπαραγωγής</h2>
+            <div class="crossfade-inline">
+              <span data-i18n="player.crossfade">Ομαλή μετάβαση</span>
+              <input type="range" id="crossfade" min="0" max="12" step="0.5" value="0" />
+            </div>
+          </div>
+          <ul id="playlist" class="playlist"></ul>
+          <p class="empty-hint" id="playlistEmptyHint" data-i18n="player.playlistEmpty">Η playlist είναι άδεια. Πρόσθεσε αρχεία ή σύρε τα εδώ.</p>
+          <div class="playlist-resize-handle" id="playlistResizeHandle" title="Σύρε για αλλαγή μεγέθους">⋯</div>
+        </div>
+      </section>
+
+      <!-- ENHANCE TAB -->
+      <section id="tab-enhance" class="tab-pane">
+        <div class="panel enhancer-master-panel">
+          <div class="enhancer-master-row">
+            <div class="enhancer-master-text">
+              <h2 data-i18n="tab.enhance">Ενισχυτής Ήχου</h2>
+              <p class="hint" data-i18n="enhance.masterHint">Ενεργοποίηση/απενεργοποίηση όλων των εφέ ενίσχυσης μονομιάς, χωρίς να χάνονται οι ρυθμίσεις σου.</p>
+            </div>
+            <div class="enhancer-master-right">
+              <div class="mini-meter" id="miniMeter"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+              <button class="switch active" id="swMasterEnable"></button>
+            </div>
+          </div>
+        </div>
+        <div class="enhance-grid">
+          <div class="enhance-col">
+            <div class="panel">
+              <h2 data-i18n="enhance.presets">Προεπιλογές ήχου</h2>
+              <div class="preset-grid" id="presetGrid"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-header-row">
+                <h2 data-i18n="enhance.myPresets">Τα Presets μου</h2>
+                <button id="btnSavePreset" class="small-btn" data-i18n="enhance.save">Αποθήκευση</button>
+              </div>
+              <div id="userPresetList" class="user-preset-list"></div>
+            </div>
+          </div>
+          <div class="enhance-col">
+            <div class="panel">
+              <div class="panel-header-row">
+                <h2 data-i18n="enhance.eq">10-Ζωνών Ισοσταθμιστής</h2>
+                <div class="segmented" id="eqViewSeg">
+                  <button class="seg-btn active" data-eq-view="sliders" data-i18n="enhance.eqSliders">Sliders</button>
+                  <button class="seg-btn" data-eq-view="curve" data-i18n="enhance.eqCurve">Καμπύλη</button>
+                </div>
+              </div>
+              <div class="eq-rack" id="eqRack"></div>
+              <canvas class="eq-curve dep-hidden" id="eqCurveCanvas" width="600" height="150"></canvas>
+            </div>
+            <div class="panel">
+              <div class="panel-header-row">
+                <h2 data-i18n="enhance.fxTitle">Εφέ Ενίσχυσης</h2>
+                <button id="btnResetFx" class="small-btn" data-i18n="enhance.reset">Επαναφορά</button>
+              </div>
+              <div class="knob-row">
+                <div class="knob-card">
+                  <div class="knob" id="knobBassBoost"><div class="knob-value" id="bassBoostVal">0 dB</div></div>
+                  <label data-i18n="enhance.bassBoost">Ενίσχυση Μπάσων</label>
+                  <input type="range" id="bassBoost" min="0" max="12" step="0.5" value="0" />
+                </div>
+                <div class="knob-card">
+                  <div class="knob" id="knobSurround"><div class="knob-value" id="surroundVal">0%</div></div>
+                  <label data-i18n="enhance.surround">3D Περιβάλλων Ήχος</label>
+                  <input type="range" id="surround" min="0" max="100" step="1" value="0" />
+                </div>
+                <div class="knob-card">
+                  <div class="knob" id="knobVolBoost"><div class="knob-value" id="volBoostVal">0 dB</div></div>
+                  <label data-i18n="enhance.volBoost">Ενίσχυση Έντασης</label>
+                  <input type="range" id="volBoost" min="0" max="12" step="0.5" value="0" />
+                </div>
+              </div>
+            </div>
+            <div class="panel">
+              <h2 data-i18n="enhance.advanced">Προηγμένα Εφέ</h2>
+              <div class="switch-row">
+                <div><div class="switch-title" data-i18n="enhance.compressor">Συμπιεστής</div><div class="switch-sub" data-i18n="enhance.compressorSub">Δυναμικός έλεγχος έντασης — Νυχτερινή λειτουργία &amp; Αυτόματο κέρδος</div></div>
+                <button class="switch" id="swCompressor"></button>
+              </div>
+              <div class="switch-row">
+                <div><div class="switch-title" data-i18n="enhance.reverb">Αντήχηση / Ατμόσφαιρα</div><div class="switch-sub" data-i18n="enhance.reverbSub">Χωρική αντήχηση — Κινηματογραφική &amp; Αίθουσας</div></div>
+                <button class="switch" id="swReverb"></button>
+              </div>
+              <div class="switch-row">
+                <div><div class="switch-title" data-i18n="enhance.exciter">Διεγέρτης Αρμονικών / Πιστότητα</div><div class="switch-sub" data-i18n="enhance.exciterSub">Αντιγραφή αρμονικών — Ζωντάνια και καθαρότητα</div></div>
+                <button class="switch" id="swExciter"></button>
+              </div>
+              <div class="switch-row">
+                <div><div class="switch-title" data-i18n="enhance.normalize">Εξομάλυνση Έντασης</div><div class="switch-sub" data-i18n="enhance.normalizeSub">Ίδια αντιληπτή ένταση σε όλα τα κομμάτια, αυτόματα</div></div>
+                <button class="switch active" id="swNormalize"></button>
+              </div>
+              <div class="fx-row">
+                <div class="fx-label"><span data-i18n="enhance.tempo">Τέμπο</span><span id="tempoVal">1.00x</span></div>
+                <input type="range" id="tempo" min="0.5" max="2" step="0.05" value="1" />
+              </div>
+              <label class="switch-row">
+                <span class="switch-sub" data-i18n="enhance.preservePitch">Διατήρηση τονικού ύψους</span>
+                <button class="switch active" id="swPreservePitch"></button>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- EXPORT TAB -->
+      <section id="tab-export" class="tab-pane">
+        <div class="panel export-panel">
+          <h2 data-i18n="export.title">Εξαγωγή / Κωδικοποίηση</h2>
+          <label class="field-label" data-i18n="export.tracks">Κομμάτια προς εξαγωγή</label>
+          <div class="export-track-list" id="exportTrackList">
+            <p class="empty-hint" data-i18n="export.tracksEmpty">Η playlist είναι άδεια.</p>
+          </div>
+          <label class="field-label" data-i18n="export.format">Μορφή αρχείου</label>
+          <div class="format-grid" id="formatGrid"></div>
+          <label class="field-label" data-i18n="export.quality">Ποιότητα</label>
+          <div class="quality-grid" id="qualityGrid">
+            <button class="quality-btn" data-q="low"><span data-i18n="export.low">Χαμηλή</span><small>96kbps · 22.05kHz</small></button>
+            <button class="quality-btn active" data-q="medium"><span data-i18n="export.medium">Μεσαία</span><small>128kbps · 44.1kHz</small></button>
+            <button class="quality-btn" data-q="high"><span data-i18n="export.high">Υψηλή</span><small>320kbps · 48kHz</small></button>
+            <button class="quality-btn" data-q="lossless"><span data-i18n="export.lossless">Χωρίς απώλειες</span><small>FLAC · 48kHz</small></button>
+          </div>
+          <label class="field-label" data-i18n="export.destination">Φάκελος αποθήκευσης</label>
+          <div class="dest-row">
+            <span class="dest-path" id="destPath" data-i18n="export.destDefault">Θα ερωτηθείς κάθε φορά</span>
+            <button id="btnChooseFolder" class="small-btn" data-i18n="export.browse">📁 Επιλογή</button>
+          </div>
+          <button id="btnExport" class="export-btn" data-i18n="export.button">Εξαγωγή</button>
+          <div class="progress-track dep-hidden" id="progressTrack">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <p class="export-status" id="exportStatus"></p>
+        </div>
+      </section>
+
+      <!-- SETTINGS TAB -->
+      <section id="tab-settings" class="tab-pane">
+        <div class="panel" id="depsPanel">
+          <h2 data-i18n="settings.deps">Πρόσθετα εξαρτήματα</h2>
+          <div class="dep-row">
+            <span class="dep-name">FFmpeg <span class="hint">(MP3, FLAC, OGG, AAC, Opus, WMA)</span></span>
+            <span class="dep-status" id="depFfmpegStatus">…</span>
+          </div>
+          <button id="btnInstallDeps" class="small-btn dep-hidden" data-i18n="settings.depsInstall">⬇ Λήψη &amp; εγκατάσταση</button>
+          <p class="hint" id="depsProgress"></p>
+        </div>
+        <div class="panel">
+          <h2 data-i18n="settings.language">Γλώσσα</h2>
+          <div class="lang-carousel" id="langCarousel">
+            <button class="lang-arrow lang-arrow-left" id="langArrowLeft" aria-label="Previous">‹</button>
+            <div class="lang-track" id="langTrack"></div>
+            <button class="lang-arrow lang-arrow-right" id="langArrowRight" aria-label="Next">›</button>
+            <button class="lang-pick-arrow lang-pick-prev" id="langPickPrev" aria-label="Previous">‹</button>
+            <button class="lang-pick-arrow lang-pick-next" id="langPickNext" aria-label="Next">›</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h2 data-i18n="settings.skin">Θέμα εμφάνισης</h2>
+          <div class="skin-carousel">
+            <button class="lang-arrow" id="skinArrowLeft" aria-label="Previous">‹</button>
+            <div class="skin-grid" id="skinGrid"></div>
+            <button class="lang-arrow" id="skinArrowRight" aria-label="Next">›</button>
+          </div>
+          <label class="field-label" data-i18n="settings.layout">Διάταξη κύριου παραθύρου</label>
+          <div class="segmented" id="layoutSeg">
+            <button class="seg-btn active" data-layout="default" data-i18n="settings.layoutDefault">Προεπιλογή</button>
+            <button class="seg-btn" data-layout="classic" data-i18n="settings.layoutClassic">Classic</button>
+          </div>
+          <label class="field-label" data-i18n="settings.btnStyle">Στυλ κουμπιών player</label>
+          <div class="segmented" id="btnStyleSeg">
+            <button class="seg-btn active" data-btn-style="rounded" data-i18n="settings.btnStyleRounded">Στρογγυλά</button>
+            <button class="seg-btn" data-btn-style="square" data-i18n="settings.btnStyleSquare">Τετράγωνα</button>
+            <button class="seg-btn" data-btn-style="outline" data-i18n="settings.btnStyleOutline">Περίγραμμα</button>
+            <button class="seg-btn" data-btn-style="glossy" data-i18n="settings.btnStyleGlossy">Γυαλιστερά</button>
+          </div>
+          <label class="field-label" data-i18n="settings.accentColor">Προσαρμοσμένο χρώμα έμφασης</label>
+          <div class="accent-color-row">
+            <input type="color" id="accentColorPicker" value="#7c6cf0" />
+            <button class="small-btn" id="btnAccentReset" data-i18n="settings.accentReset">Επαναφορά θέματος</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h2 data-i18n="settings.background">Κινούμενο φόντο</h2>
+          <div class="skin-carousel">
+            <button class="lang-arrow" id="bgArrowLeft" aria-label="Previous">‹</button>
+            <div class="bg-grid" id="bgGrid">
+              <button class="bg-card" data-bg="none"><span class="bg-swatch bg-swatch-none"></span><span data-i18n="settings.bgNone">Κανένα</span></button>
+              <button class="bg-card active" data-bg="equalizer"><span class="bg-swatch bg-swatch-eq"></span><span data-i18n="settings.bgEq">Equalizer Glow</span></button>
+              <button class="bg-card" data-bg="waves"><span class="bg-swatch bg-swatch-wave"></span><span data-i18n="settings.bgWaves">Waveform Flow</span></button>
+              <button class="bg-card" data-bg="nebula"><span class="bg-swatch bg-swatch-nebula"></span><span data-i18n="settings.bgNebula">Vinyl Nebula</span></button>
+              <button class="bg-card" data-bg="starfield"><span class="bg-swatch bg-swatch-starfield"></span><span data-i18n="settings.bgStarfield">Starfield Drift</span></button>
+              <button class="bg-card" data-bg="aurora"><span class="bg-swatch bg-swatch-aurora"></span><span data-i18n="settings.bgAurora">Aurora Ribbons</span></button>
+              <button class="bg-card" data-bg="vinylspin"><span class="bg-swatch bg-swatch-vinylspin"></span><span data-i18n="settings.bgVinylspin">Vinyl Spin</span></button>
+              <button class="bg-card" data-bg="particledrift"><span class="bg-swatch bg-swatch-particledrift"></span><span data-i18n="settings.bgParticledrift">Particle Drift</span></button>
+              <button class="bg-card" data-bg="mesh"><span class="bg-swatch bg-swatch-mesh"></span><span data-i18n="settings.bgMesh">Gradient Mesh</span></button>
+              <button class="bg-card" data-bg="grid"><span class="bg-swatch bg-swatch-grid"></span><span data-i18n="settings.bgGrid">Pulse Grid</span></button>
+              <button class="bg-card" data-bg="bokeh"><span class="bg-swatch bg-swatch-bokeh"></span><span data-i18n="settings.bgBokeh">Bokeh Lights</span></button>
+            </div>
+            <button class="lang-arrow" id="bgArrowRight" aria-label="Next">›</button>
+          </div>
+          <label class="field-label" data-i18n="settings.hueMode">Απόχρωση φόντου</label>
+          <div class="segmented" id="hueModeSeg">
+            <button class="seg-btn active" data-hue-mode="auto" data-i18n="settings.hueAuto">Αυτόματη εναλλαγή</button>
+            <button class="seg-btn" data-hue-mode="manual" data-i18n="settings.hueManual">Χειροκίνητη</button>
+          </div>
+          <div class="hue-row dep-hidden" id="hueSliderRow">
+            <input type="range" id="hueSlider" min="0" max="360" step="1" value="0" />
+          </div>
+        </div>
+        <div class="panel">
+          <h2 data-i18n="settings.backup">Αντίγραφο ασφαλείας &amp; Συγχρονισμός Νέφους</h2>
+          <p class="hint" data-i18n="settings.backupHint">Αποθήκευσε τις ρυθμίσεις, τις προεπιλογές και τη λίστα αναπαραγωγής σου σε ένα αρχείο. Αποθήκευσέ το μέσα σε φάκελο OneDrive/Google Drive/Dropbox για να τις έχεις σε κάθε υπολογιστή.</p>
+          <div class="settings-btn-row">
+            <button id="btnBackupExport" class="small-btn" data-i18n="settings.backupExport">⬆ Αποθήκευση σε αρχείο</button>
+            <button id="btnBackupImport" class="small-btn" data-i18n="settings.backupImport">⬇ Επαναφορά από αρχείο</button>
+          </div>
+          <p class="hint" id="backupStatus"></p>
+        </div>
+        <div class="panel">
+          <h2 data-i18n="settings.systemTitle">Σύστημα</h2>
+          <div class="switch-row">
+            <div><div class="switch-title" data-i18n="settings.trackNotif">Ειδοποιήσεις τραγουδιού</div><div class="switch-sub" data-i18n="settings.trackNotifSub">Ειδοποίηση Windows όταν αλλάζει το κομμάτι</div></div>
+            <button class="switch active" id="swTrackNotif"></button>
+          </div>
+          <div class="switch-row">
+            <div><div class="switch-title" data-i18n="settings.autostart">Αυτόματη εκκίνηση</div><div class="switch-sub" data-i18n="settings.autostartSub">Εκκίνηση του Waveframe μαζί με τα Windows</div></div>
+            <button class="switch" id="swAutostart"></button>
+          </div>
+          <div class="settings-btn-row">
+            <button class="small-btn" id="btnCheckUpdates" data-i18n="settings.checkUpdates">🔄 Έλεγχος για ενημερώσεις</button>
+          </div>
+          <p class="hint" id="updateStatus"></p>
+        </div>
+        <div class="panel">
+          <h2 data-i18n="settings.about">Σχετικά</h2>
+          <p class="hint" id="aboutText">Waveframe <span id="aboutVersion">v1.5.0</span> — Web Audio Engine</p>
+          <p class="hint" data-i18n="settings.tutorialHint">Μια σύντομη ξενάγηση στις βασικές λειτουργίες της εφαρμογής.</p>
+          <div class="settings-btn-row">
+            <button id="btnShowTutorial" class="small-btn" data-i18n="settings.tutorialBtn">▶ Προβολή οδηγού</button>
+            <button id="btnOpenHelp" class="small-btn" data-i18n="settings.helpBtn">📖 Οδηγίες, ιστορικό &amp; βοήθεια</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div class="mini-bar" id="miniBar">
+    <div class="mini-bar-art" id="miniBarArt"><span id="miniBarArtFallback">🎵</span><img id="miniBarArtImg" alt="" /></div>
+    <div class="mini-bar-info">
+      <div class="mini-bar-name" id="miniBarName" data-i18n="player.noTrack">Κανένα κομμάτι φορτωμένο</div>
+      <div class="mini-bar-controls">
+        <button id="miniBarPrev" title="Προηγούμενο" aria-label="Προηγούμενο">⏮</button>
+        <button id="miniBarPlay" title="Αναπαραγωγή/Παύση" aria-label="Αναπαραγωγή/Παύση">▶</button>
+        <button id="miniBarNext" title="Επόμενο" aria-label="Επόμενο">⏭</button>
+        <button id="miniBarExpand" title="Επαναφορά" aria-label="Επαναφορά">&#8865;</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer" data-i18n="footer.text">
+    Επεξεργασία ήχου σε πραγματικό χρόνο · Web Audio API · Όλες οι αλλαγές εφαρμόζονται άμεσα στην αναπαραγωγή
+  </footer>
+
+  <div id="tutorialOverlay" class="tutorial-overlay">
+    <div class="tutorial-card">
+      <button class="tutorial-skip" id="tutorialSkip" data-i18n="tutorial.skip">Παράλειψη</button>
+      <div class="tutorial-slides" id="tutorialSlides"></div>
+      <div class="tutorial-dots" id="tutorialDots"></div>
+      <div class="tutorial-nav">
+        <button class="small-btn" id="tutorialBack" data-i18n="tutorial.back">Πίσω</button>
+        <button class="export-btn tutorial-next" id="tutorialNext" data-i18n="tutorial.next">Επόμενο</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="inputModalOverlay" class="tutorial-overlay">
+    <div class="tutorial-card input-modal-card">
+      <h3 id="inputModalTitle">Τίτλος</h3>
+      <p class="hint" id="inputModalMessage"></p>
+      <input type="text" id="inputModalField" class="input-modal-field" />
+      <div class="tutorial-nav">
+        <button class="small-btn" id="inputModalCancel" data-i18n="common.cancel">Άκυρο</button>
+        <button class="export-btn tutorial-next" id="inputModalOk">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="crashOverlay" class="tutorial-overlay dep-hidden">
+    <div class="tutorial-card">
+      <h3 data-i18n="crash.title">Κάτι πήγε στραβά</h3>
+      <p class="hint" data-i18n="crash.desc">Παρουσιάστηκε ένα απρόσμενο σφάλμα. Μπορείς να προσπαθήσεις να συνεχίσεις, ή να επαναφορτώσεις την εφαρμογή.</p>
+      <button class="small-btn" id="crashDetailsToggle" data-i18n="crash.showDetails">Τεχνικές λεπτομέρειες</button>
+      <pre class="crash-details dep-hidden" id="crashDetails"></pre>
+      <div class="tutorial-nav">
+        <button class="small-btn" id="crashDismiss" data-i18n="crash.dismiss">Παράβλεψη</button>
+        <button class="export-btn tutorial-next" id="crashReload" data-i18n="crash.reload">Επαναφόρτωση</button>
+      </div>
+    </div>
+  </div>
+
+  <audio id="audioSlotA" crossorigin="anonymous"></audio>
+  <audio id="audioSlotB" crossorigin="anonymous"></audio>
+
+  <script src="i18n.js"></script>
+  <script src="backgrounds.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

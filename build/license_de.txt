@@ -1,0 +1,13 @@
+Lizenzvereinbarung — Waveframe
+
+Waveframe wird als Closed-Source-Software vertrieben, alle Rechte vorbehalten. Durch die Nutzung dieser Anwendung erkennen Sie an, dass sie "wie besehen" ohne jegliche Gewährleistung bereitgestellt wird und der Autor keine Haftung für Datenverlust oder Schäden durch die Nutzung übernimmt.
+
+Waveframe verwendet folgende Open-Source-Komponenten, jeweils unter eigener Lizenz:
+- Electron — MIT-Lizenz
+- music-metadata — MIT-Lizenz
+- adm-zip — MIT-Lizenz
+- FFmpeg — LGPL-Lizenz (über Ihr System oder ein optionaler Download auf Anfrage aus den Einstellungen)
+
+Vollständiger Lizenztext Dritter: in der App, Einstellungen → Über → "Anleitung, Änderungsprotokoll & Hilfe" → Tab "Lizenz".
+
+Mit Klick auf "Ich stimme zu" akzeptieren Sie die obigen Bedingungen.

@@ -1,0 +1,13 @@
+Acord de licență — Waveframe
+
+Waveframe este distribuit ca software cu sursă închisă, toate drepturile rezervate. Prin utilizarea acestei aplicații, acceptați că este furnizată „ca atare”, fără nicio garanție, iar autorul nu își asumă nicio răspundere pentru pierderea de date sau daunele rezultate din utilizarea acesteia.
+
+Waveframe utilizează următoarele componente open-source, fiecare sub propria licență:
+- Electron — licență MIT
+- music-metadata — licență MIT
+- adm-zip — licență MIT
+- FFmpeg — licență LGPL (prin sistemul dumneavoastră sau o descărcare opțională la cerere din Setări)
+
+Textul complet al licențelor terților: în aplicație, Setări → Despre → „Ghid, istoric versiuni și ajutor” → fila „Licență”.
+
+Făcând clic pe „Sunt de acord” acceptați termenii de mai sus.

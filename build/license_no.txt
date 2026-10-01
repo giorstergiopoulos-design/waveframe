@@ -1,0 +1,13 @@
+Lisensavtale — Waveframe
+
+Waveframe distribueres som programvare med lukket kildekode, med alle rettigheter forbeholdt. Ved å bruke denne applikasjonen godtar du at den leveres "som den er", uten noen form for garanti, og at forfatteren ikke påtar seg noe ansvar for datatap eller skade som følge av bruken.
+
+Waveframe bruker følgende open source-komponenter, hver under sin egen lisens:
+- Electron — MIT-lisens
+- music-metadata — MIT-lisens
+- adm-zip — MIT-lisens
+- FFmpeg — LGPL-lisens (via systemet ditt, eller en valgfri nedlasting på forespørsel fra Innstillinger)
+
+Full tredjepartslisenstekst: i appen, Innstillinger → Om → "Veiledning, endringslogg og hjelp" → fanen "Lisens".
+
+Ved å klikke på "Jeg godtar" aksepterer du vilkårene ovenfor.
