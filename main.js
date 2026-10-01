@@ -54,7 +54,7 @@ async function resolveFfmpegPath() {
 function downloadFile(url, destPath, onProgress, redirects = 0) {
   return new Promise((resolve, reject) => {
     if (redirects > 5) return reject(new Error('Too many redirects'));
-    https.get(url, { headers: { 'User-Agent': 'Waveframe' } }, (res) => {
+    const req = https.get(url, { headers: { 'User-Agent': 'Waveframe' } }, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         res.resume();
         downloadFile(res.headers.location, destPath, onProgress, redirects + 1).then(resolve, reject);
@@ -73,8 +73,12 @@ function downloadFile(url, destPath, onProgress, redirects = 0) {
       });
       res.pipe(file);
       file.on('finish', () => file.close(() => resolve()));
-      file.on('error', reject);
-    }).on('error', reject);
+      file.on('error', (err) => { res.destroy(); fs.unlink(destPath, () => {}); reject(err); });
+      res.on('error', (err) => { file.destroy(); fs.unlink(destPath, () => {}); reject(err); });
+    });
+    // Χωρίς timeout, μια "κολλημένη" σύνδεση άφηνε τη λήψη του ffmpeg να περιμένει για πάντα.
+    req.setTimeout(30000, () => req.destroy(new Error('Download timed out')));
+    req.on('error', reject);
   });
 }
 
@@ -87,11 +91,19 @@ async function installFfmpeg(onProgress) {
   await downloadFile(FFMPEG_DOWNLOAD_URL, zipPath, (pct) => onProgress({ phase: 'download', pct }));
 
   onProgress({ phase: 'extract', pct: 0 });
-  const zip = new AdmZip(zipPath);
-  const entry = zip.getEntries().find((e) => /(^|\/)bin\/ffmpeg\.exe$/i.test(e.entryName));
-  if (!entry) throw new Error('Το ffmpeg.exe δεν βρέθηκε μέσα στο πακέτο λήψης.');
-  fs.writeFileSync(FALLBACK_FFMPEG(), entry.getData());
-  fs.unlink(zipPath, () => {});
+  let entryData;
+  try {
+    const zip = new AdmZip(zipPath);
+    const entry = zip.getEntries().find((e) => /(^|\/)bin\/ffmpeg\.exe$/i.test(e.entryName));
+    if (!entry) throw new Error('Το ffmpeg.exe δεν βρέθηκε μέσα στο πακέτο λήψης.');
+    entryData = entry.getData();
+  } finally {
+    fs.unlink(zipPath, () => {}); // πριν: το προσωρινό zip έμενε στο temp όταν η εξαγωγή αποτύγχανε
+  }
+  // Ατομική εγγραφή (tmp + rename): μια διακοπή στη μέση δεν αφήνει μισο-γραμμένο ffmpeg.exe.
+  const tmpExe = FALLBACK_FFMPEG() + '.tmp';
+  fs.writeFileSync(tmpExe, entryData);
+  fs.renameSync(tmpExe, FALLBACK_FFMPEG());
   onProgress({ phase: 'done', pct: 1 });
 
   const ok = await testFfmpeg(FALLBACK_FFMPEG());
@@ -116,6 +128,8 @@ function createHelpWindow(parent) {
     },
   });
   helpWindow.setMenuBarVisibility(false);
+  helpWindow.webContents.on('will-navigate', (e, url) => { if (!url.startsWith('file:')) e.preventDefault(); });
+  helpWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   helpWindow.loadFile(path.join(__dirname, 'renderer', 'help.html'), { search: `theme=${encodeURIComponent(currentTheme)}` });
   helpWindow.on('closed', () => { helpWindow = null; });
 }
@@ -188,6 +202,10 @@ function createWindow() {
   });
 
   mainWin = win;
+  // Το παράθυρο φορτώνει ΜΟΝΟ τοπικές σελίδες. Ένας σύνδεσμος/redirect δεν πρέπει να μπορεί να φορτώσει
+  // εξωτερικό περιεχόμενο στο ίδιο παράθυρο με το preload (IPC) ούτε να ανοίξει νέο παράθυρο Electron.
+  win.webContents.on('will-navigate', (e, url) => { if (!url.startsWith('file:')) e.preventDefault(); });
+  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
   win.on('closed', () => { if (mainWin === win) mainWin = null; });
   updateJumpList();
@@ -256,7 +274,8 @@ function createWindow() {
   ipcMain.on('autostart:set', (event, enabled) => {
     app.setLoginItemSettings({ openAtLogin: enabled, path: process.execPath });
   });
-  ipcMain.on('now-playing:update', (event, { title, playing }) => {
+  ipcMain.on('now-playing:update', (event, payload) => {
+    const { title, playing } = payload || {};
     isPlaying = !!playing;
     win.setTitle(title ? `${title} — Waveframe` : 'Waveframe');
     updateThumbbar();
@@ -424,7 +443,7 @@ function createWindow() {
           const child = spawn(ffmpegPath, args);
           let stderrBuf = '';
           child.stderr.on('data', (chunk) => {
-            stderrBuf += chunk.toString();
+            stderrBuf = (stderrBuf + chunk.toString()).slice(-4000); // bounded
             const match = /time=(\d+):(\d+):(\d+\.\d+)/.exec(chunk.toString());
             if (match && duration) {
               const secs = parseInt(match[1], 10) * 3600 + parseInt(match[2], 10) * 60 + parseFloat(match[3]);

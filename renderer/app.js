@@ -1045,6 +1045,7 @@ function fmtTime(s) {
   return `${m}:${sec.toString().padStart(2, '0')}`;
 }
 setInterval(() => {
+  if (document.hidden) return; // κρυμμένο/ελαχιστοποιημένο παράθυρο: καμία ενημέρωση UI
   const el = engine.activeEl;
   if (el && el.duration) {
     els.seek.value = String((el.currentTime / el.duration) * 1000);
@@ -1099,12 +1100,21 @@ function computeLoudnessGain(buffer) {
   const gainDb = Math.max(-12, Math.min(12, targetDb - rmsDb));
   return Math.pow(10, gainDb / 20);
 }
+// Ένα ΚΟΙΝΟ AudioContext μόνο για decodeAudioData (ανάλυση έντασης/export). Πριν, κάθε κομμάτι/export
+// δημιουργούσε νέο AudioContext που δεν έκλεινε ποτέ — το Chromium επιτρέπει περιορισμένο αριθμό ταυτόχρονων
+// contexts, οπότε μετά από λίγα κομμάτια η κανονικοποίηση έπεφτε σιωπηλά σε gain 1 και το export αποτύγχανε.
+let sharedDecodeCtx = null;
+function getDecodeCtx() {
+  if (!sharedDecodeCtx || sharedDecodeCtx.state === 'closed') {
+    sharedDecodeCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return sharedDecodeCtx;
+}
 async function analyzeLoudness(item) {
   if (typeof item.normGain === 'number') return item.normGain;
   try {
     const arrayBuf = item.file ? await item.file.arrayBuffer() : await (await fetch(item.url)).arrayBuffer();
-    const analysisCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const buffer = await analysisCtx.decodeAudioData(arrayBuf);
+    const buffer = await getDecodeCtx().decodeAudioData(arrayBuf);
     item.normGain = computeLoudnessGain(buffer);
   } catch {
     item.normGain = 1;
@@ -1122,6 +1132,8 @@ function playTrackAt(index) {
   });
   engine.switchTrack((slotIndex) => {
     const slot = engine.slots[slotIndex];
+    // Απελευθέρωση του προηγούμενου blob URL αυτού του slot — πριν διέρρεε ένα blob URL ανά κομμάτι.
+    if (slot.el.src && slot.el.src.startsWith('blob:')) URL.revokeObjectURL(slot.el.src);
     slot.el.src = item.file ? URL.createObjectURL(item.file) : item.url;
     slot.name = item.name;
   }, () => { updateTrackNameUi(); syncPlayButton(); renderPlaylist(); });
@@ -1438,10 +1450,9 @@ window.waveframe.onExportProgress((pct) => {
 
 async function exportOneTrack(item, q, format) {
   const arrayBuf = item.file ? await item.file.arrayBuffer() : await (await fetch(item.url)).arrayBuffer();
-  const decodeCtx = new (window.AudioContext || window.webkitAudioContext)();
   let decoded;
   try {
-    decoded = await decodeCtx.decodeAudioData(arrayBuf);
+    decoded = await getDecodeCtx().decodeAudioData(arrayBuf);
   } catch (err) {
     const decodeErr = new Error('decode-failed');
     decodeErr.code = 'decode-failed';
@@ -1810,9 +1821,13 @@ hueSlider.addEventListener('input', () => {
   localStorage.setItem('waveframe.hueValue', hueSlider.value);
   if (hueMode === 'manual') bgCanvasEl.style.filter = `hue-rotate(${hueSlider.value}deg)`;
 });
+let autoHueFrame = 0;
 function tickAutoHue() {
-  if (hueMode === 'auto') {
-    autoHue = (autoHue + 0.06) % 360;
+  // Το hue-rotate σε ολόκληρο το canvas φόντου επαναϋπολογίζεται από τη GPU σε ΚΑΘΕ αλλαγή του style —
+  // στα 60fps ήταν άσκοπα ακριβό για μια τόσο αργή μετάβαση (0.06°/frame). Ενημερώνουμε 1 στα 4 frames
+  // (~15fps) με αντίστοιχα μεγαλύτερο βήμα: ίδια ταχύτητα, 1/4 του κόστους.
+  if (hueMode === 'auto' && !document.hidden && (++autoHueFrame % 4 === 0)) {
+    autoHue = (autoHue + 0.24) % 360;
     bgCanvasEl.style.filter = `hue-rotate(${autoHue}deg)`;
   }
   requestAnimationFrame(tickAutoHue);
