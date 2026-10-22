@@ -334,7 +334,13 @@ class AudioEngine {
 
   setVolume(v) {
     this.state.volume = v;
-    if (!this.state.muted) this.masterGain.gain.setTargetAtTime(v, this.ctx.currentTime, 0.02);
+    if (!this.state.muted) this.masterGain.gain.setTargetAtTime(v * (this.sleepFactor ?? 1), this.ctx.currentTime, 0.02);
+  }
+
+  // Sleep timer fade-out: multiplies the user's volume without touching it (so cancelling the timer restores the exact level).
+  setSleepFactor(f) {
+    this.sleepFactor = f;
+    if (!this.state.muted) this.masterGain.gain.setTargetAtTime(this.state.volume * f, this.ctx.currentTime, 0.05);
   }
 
   setMasterEnable(on) {
@@ -346,7 +352,7 @@ class AudioEngine {
 
   setMuted(m) {
     this.state.muted = m;
-    this.masterGain.gain.setTargetAtTime(m ? 0 : this.state.volume, this.ctx.currentTime, 0.02);
+    this.masterGain.gain.setTargetAtTime(m ? 0 : this.state.volume * (this.sleepFactor ?? 1), this.ctx.currentTime, 0.02);
   }
 
   setTempo(rate) {
@@ -1083,29 +1089,30 @@ engine.slots.forEach((s) => {
   });
 });
 function onTrackEnded() {
+  if (sleepWantsStopAtEnd()) return;
   if (repeatOn && playlist.length === 1) { playTrackAt(currentTrackIndex); return; }
   goNext();
 }
-function computeLoudnessGain(buffer) {
-  let sumSquares = 0, count = 0;
-  for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
-    const data = buffer.getChannelData(ch);
-    const step = Math.max(1, Math.floor(data.length / 200000));
-    for (let i = 0; i < data.length; i += step) { sumSquares += data[i] * data[i]; count++; }
-  }
-  const rms = Math.sqrt(sumSquares / Math.max(1, count));
-  const rmsDb = 20 * Math.log10(rms || 1e-6);
-  const targetDb = -18;
-  const gainDb = Math.max(-12, Math.min(12, targetDb - rmsDb));
-  return Math.pow(10, gainDb / 20);
+// Real loudness (ITU-R BS.1770-4 integrated LUFS with gating, see audiolib.js) instead of a plain RMS estimate:
+// quiet classical and loud masters now land on the same perceived level. Result: { gain (linear), lufs }.
+function measureLoudness(buffer) {
+  const channels = [];
+  for (let ch = 0; ch < buffer.numberOfChannels; ch++) channels.push(buffer.getChannelData(ch));
+  const lufs = WaveframeAudio.integratedLufs(channels, buffer.sampleRate);
+  const gainDb = WaveframeAudio.lufsToGainDb(lufs, -18, 12);
+  return { gain: WaveframeAudio.dbToLinear(gainDb), lufs, gainDb };
 }
+function computeLoudnessGain(buffer) { return measureLoudness(buffer).gain; }
 async function analyzeLoudness(item) {
   if (typeof item.normGain === 'number') return item.normGain;
   try {
     const arrayBuf = item.file ? await item.file.arrayBuffer() : await (await fetch(item.url)).arrayBuffer();
-    const analysisCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // OfflineAudioContext: no audio device / audio thread, and (unlike AudioContext) it never counts against Chromium's
+    // limit of live contexts, so loudness analysis of many tracks cannot silently start failing.
+    const analysisCtx = new OfflineAudioContext(1, 1, 44100);
     const buffer = await analysisCtx.decodeAudioData(arrayBuf);
-    item.normGain = computeLoudnessGain(buffer);
+    const m = measureLoudness(buffer);
+    item.normGain = m.gain; item.lufs = m.lufs; item.normGainDb = m.gainDb;
   } catch {
     item.normGain = 1;
   }
@@ -1117,14 +1124,22 @@ function playTrackAt(index) {
   currentTrackIndex = index;
   const item = playlist[index];
   engine.setNormalizationGain(1);
+  showLoudnessInfo(null);
   analyzeLoudness(item).then((gain) => {
-    if (playlist[currentTrackIndex] === item) engine.setNormalizationGain(gain);
+    if (playlist[currentTrackIndex] === item) { engine.setNormalizationGain(gain); showLoudnessInfo(item); }
   });
   engine.switchTrack((slotIndex) => {
     const slot = engine.slots[slotIndex];
     slot.el.src = item.file ? URL.createObjectURL(item.file) : item.url;
     slot.name = item.name;
   }, () => { updateTrackNameUi(); syncPlayButton(); renderPlaylist(); });
+}
+function showLoudnessInfo(item) {
+  const el = document.getElementById('loudnessInfo');
+  if (!el) return;
+  if (!item || !Number.isFinite(item.lufs)) { el.textContent = t('enhance.loudnessNone'); return; }
+  const sign = item.normGainDb > 0 ? '+' : '';
+  el.textContent = t('enhance.loudnessInfo').replace('{lufs}', item.lufs.toFixed(1)).replace('{gain}', sign + item.normGainDb.toFixed(1));
 }
 function goNext() {
   if (playlist.length === 0) return;
@@ -1149,6 +1164,66 @@ els.btnMute.addEventListener('click', () => {
   els.btnMute.textContent = m ? '🔇' : '🔊';
 });
 els.volume.addEventListener('input', () => engine.setVolume(parseInt(els.volume.value, 10) / 100));
+
+/* ---- sleep timer: Off -> 15 -> 30 -> 45 -> 60 -> 90 min -> end of track -> Off. Fades the volume out over the last 10 s ---- */
+const SLEEP_STEPS = [0, 15, 30, 45, 60, 90, 'end'];
+let sleepStep = 0, sleepEndAt = 0, sleepTick = null;
+function sleepLabel() {
+  const s = SLEEP_STEPS[sleepStep];
+  if (s === 0) return t('player.sleepOff');
+  if (s === 'end') return t('player.sleepEnd');
+  return t('player.sleepOn').replace('{n}', String(s));
+}
+function refreshSleepButton() {
+  const btn = document.getElementById('btnSleep');
+  if (!btn) return;
+  const s = SLEEP_STEPS[sleepStep];
+  btn.classList.toggle('active', s !== 0);
+  btn.title = btn.ariaLabel = sleepLabel();
+  if (s === 0) btn.textContent = '⏾';
+  else if (s === 'end') btn.textContent = '⏾ ⏭';
+  else btn.textContent = `⏾ ${Math.max(1, Math.ceil((sleepEndAt - Date.now()) / 60000))}'`;
+}
+function stopSleepTick() { if (sleepTick) { clearInterval(sleepTick); sleepTick = null; } engine.setSleepFactor(1); }
+function fireSleep() {
+  stopSleepTick(); sleepStep = 0;
+  engine.activeEl.pause();
+  engine.setSleepFactor(1);            // restore the user's volume for the next time they press play
+  refreshSleepButton(); syncPlayButton();
+}
+function setSleepStep(step) {
+  sleepStep = step; stopSleepTick();
+  const s = SLEEP_STEPS[sleepStep];
+  if (typeof s === 'number' && s > 0) {
+    sleepEndAt = Date.now() + s * 60000;
+    sleepTick = setInterval(() => {
+      const left = sleepEndAt - Date.now();
+      engine.setSleepFactor(WaveframeAudio.sleepFadeGain(left));
+      if (left <= 0) fireSleep(); else refreshSleepButton();
+    }, 1000);
+  }
+  refreshSleepButton();
+}
+document.getElementById('btnSleep').addEventListener('click', () => setSleepStep((sleepStep + 1) % SLEEP_STEPS.length));
+document.addEventListener('waveframe:language-changed', refreshSleepButton);
+// "end of track": the existing ended handler asks us whether to stop instead of advancing
+function sleepWantsStopAtEnd() { if (SLEEP_STEPS[sleepStep] === 'end') { fireSleep(); return true; } return false; }
+
+/* ---- export the current EQ for Opsis / Equalizer APO (.txt) ---- */
+function downloadText(filename, text) {
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+document.getElementById('btnExportApo').addEventListener('click', () => {
+  const item = playlist[currentTrackIndex];
+  const name = 'Waveframe EQ' + (item && item.name ? ' - ' + item.name : '');
+  const txt = WaveframeAudio.toEqualizerApo({ bands: [...engine.state.eqBands], bassBoost: engine.state.bassBoost }, name);
+  downloadText('waveframe-eq.txt', txt);
+  showAlertDialog(t('enhance.exportApo'), t('enhance.exportedApo'));
+});
 
 /* ---- in-app keyboard shortcuts ---- */
 window.addEventListener('keydown', (e) => {
@@ -1438,6 +1513,8 @@ window.waveframe.onExportProgress((pct) => {
 
 async function exportOneTrack(item, q, format) {
   const arrayBuf = item.file ? await item.file.arrayBuffer() : await (await fetch(item.url)).arrayBuffer();
+  // Same sample-rate behaviour as before (device rate), but the context is now CLOSED: it used to leak one live
+  // AudioContext per exported track, and Chromium refuses to create new ones after a few.
   const decodeCtx = new (window.AudioContext || window.webkitAudioContext)();
   let decoded;
   try {
@@ -1446,6 +1523,8 @@ async function exportOneTrack(item, q, format) {
     const decodeErr = new Error('decode-failed');
     decodeErr.code = 'decode-failed';
     throw decodeErr;
+  } finally {
+    decodeCtx.close().catch(() => {});
   }
   const rendered = await engine.renderOffline(decoded);
   const wavBuffer = encodeWavBuffer(rendered);
@@ -1810,9 +1889,13 @@ hueSlider.addEventListener('input', () => {
   localStorage.setItem('waveframe.hueValue', hueSlider.value);
   if (hueMode === 'manual') bgCanvasEl.style.filter = `hue-rotate(${hueSlider.value}deg)`;
 });
-function tickAutoHue() {
-  if (hueMode === 'auto') {
-    autoHue = (autoHue + 0.06) % 360;
+// Re-filtering a full-window canvas is GPU work on every change: update at ~15 fps (same visible speed: bigger step) and
+// not at all while the window is hidden/minimized.
+let lastHueTick = 0;
+function tickAutoHue(now) {
+  if (hueMode === 'auto' && !document.hidden && now - lastHueTick >= 66) {
+    autoHue = (autoHue + 0.06 * ((now - lastHueTick) / 16.7)) % 360;
+    lastHueTick = now;
     bgCanvasEl.style.filter = `hue-rotate(${autoHue}deg)`;
   }
   requestAnimationFrame(tickAutoHue);
@@ -2473,3 +2556,33 @@ window.waveframe?.setThumbbarIcons?.({
 if (!localStorage.getItem('waveframe.tutorialSeen')) {
   setTimeout(openTutorial, 400);
 }
+
+
+/* ---- renderer self-test: `WAVEFRAME_SELFTEST=1 npm start` runs this inside the real Electron renderer and prints the result ---- */
+window.__selfTest = async function () {
+  const out = [];
+  const check = (name, ok, extra) => out.push({ name, ok: !!ok, extra: extra === undefined ? '' : String(extra) });
+  try {
+    check('audiolib loaded', typeof WaveframeAudio === 'object' && typeof WaveframeAudio.integratedLufs === 'function');
+    check('sleep button present', !!document.getElementById('btnSleep'));
+    check('export button present', !!document.getElementById('btnExportApo'));
+    check('loudness panel present', !!document.getElementById('loudnessInfo'));
+    // loudness through a REAL decoded AudioBuffer: stereo 997 Hz sine at -23 dBFS must read -23 LUFS and need +5 dB to reach -18
+    const fs = 48000, ctx = new OfflineAudioContext(2, fs * 6, fs);
+    const buf = ctx.createBuffer(2, fs * 6, fs);
+    for (let c = 0; c < 2; c++) { const d = buf.getChannelData(c); for (let i = 0; i < d.length; i++) d[i] = Math.pow(10, -23 / 20) * Math.sin(2 * Math.PI * 997 * i / fs); }
+    const m = measureLoudness(buf);
+    check('measureLoudness on an AudioBuffer', Math.abs(m.lufs + 23) < 0.15 && Math.abs(m.gainDb - 5) < 0.15, `${m.lufs.toFixed(2)} LUFS, gain ${m.gainDb.toFixed(2)} dB`);
+    // sleep timer cycle
+    setSleepStep(1); check('sleep timer arms (15 min)', SLEEP_STEPS[sleepStep] === 15 && !!sleepTick && document.getElementById('btnSleep').classList.contains('active'));
+    setSleepStep(0); check('sleep timer disarms and restores volume', !sleepTick && engine.sleepFactor === 1);
+    setSleepStep(6); check('sleep "end of track" mode', SLEEP_STEPS[sleepStep] === 'end' && sleepWantsStopAtEnd() === true);
+    // EQ export of the live engine state
+    engine.applyEqBands([6, 5, 3, 1, 0, 0, 1, 2, 3, 4]);
+    const txt = WaveframeAudio.toEqualizerApo({ bands: [...engine.state.eqBands], bassBoost: engine.state.bassBoost });
+    check('EQ export reflects the engine', /Preamp: -6\.0 dB/.test(txt) && /Fc 32 Hz Gain 6\.0/.test(txt), txt.split('\r\n')[1]);
+    engine.applyEqBands([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    check('i18n has the new keys', t('player.sleep') !== 'player.sleep' && t('enhance.exportApo') !== 'enhance.exportApo');
+  } catch (e) { check('self-test threw', false, e && e.stack || e); }
+  return out;
+};

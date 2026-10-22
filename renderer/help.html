@@ -9,7 +9,7 @@
 </head>
 <body>
   <header class="help-header">
-    <h1>Waveframe <span id="helpVersion">v1.5.0</span></h1>
+    <h1>Waveframe <span id="helpVersion">v1.6.0</span></h1>
     <div class="help-tabs">
       <button class="help-tab active" data-tab="guide">Οδηγίες χρήσης</button>
       <button class="help-tab" data-tab="changelog">Ιστορικό εκδόσεων</button>
@@ -51,6 +51,18 @@
     </section>
 
     <section id="help-changelog" class="help-pane">
+      <div class="changelog-entry">
+        <div class="changelog-version">v1.6.0</div>
+        <ul>
+          <li>Πραγματική μέτρηση έντασης κατά ITU-R BS.1770-4 (LUFS με gating) αντί για απλό RMS: η εξομάλυνση έντασης φέρνει κάθε κομμάτι στο ίδιο ακουστικό επίπεδο (στόχος -18 LUFS). Ελέγχθηκε με το πρότυπο αναφοράς EBU (-23 LUFS) και εμφανίζεται στην καρτέλα Ενισχυτής Ήχου</li>
+          <li>Χρονοδιακόπτης ύπνου: παύση μετά από 15/30/45/60/90 λεπτά ή στο τέλος του κομματιού, με σταδιακό σβήσιμο του ήχου στα τελευταία 10 δευτερόλεπτα</li>
+          <li>Εξαγωγή του ισοσταθμιστή σε αρχείο Equalizer APO (.txt) που ανοίγει στο Opsis → Ενίσχυση ήχου ή στο Equalizer APO, με αυτόματο preamp ώστε να μη γίνεται clipping</li>
+          <li>Διόρθωση διαρροής AudioContext: οι αναλύσεις έντασης/εξαγωγής δεν αφήνουν πια ανοιχτά contexts (το Chromium έχει όριο και η ανάλυση θα αποτύγχανε σιωπηλά)</li>
+          <li>Λιγότερο φορτίο GPU: το αυτόματο hue-rotate φόντου τρέχει στα ~15 καρέ/δευτ. και σταματά όταν το παράθυρο είναι κρυμμένο</li>
+          <li>Σταθερότητα και ασφάλεια: αυτόματη επαναφόρτωση αν «πεθάνει» η διεργασία rendering, αποκλεισμός πλοήγησης εκτός εφαρμογής και αίτημα δικαιωμάτων μόνο για μικρόφωνο</li>
+          <li>Νέοι αυτόματοι έλεγχοι: 14 unit tests (<code>npm test</code>) και self-test μέσα στον πραγματικό renderer (<code>npm run selftest</code>)</li>
+        </ul>
+      </div>
       <div class="changelog-entry">
         <div class="changelog-version">v1.5.0</div>
         <ul>

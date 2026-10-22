@@ -188,7 +188,31 @@ function createWindow() {
   });
 
   mainWin = win;
+  // Hardening + stability: the app only ever shows its own local pages.
+  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  win.webContents.on('will-navigate', (e, url) => { if (!url.startsWith('file:')) e.preventDefault(); });
+  // Only the microphone input (getUserMedia) is a legitimate permission here; everything else is denied.
+  win.webContents.session.setPermissionRequestHandler((_wc, permission, cb) => cb(permission === 'media'));
+  // A crashed/killed renderer (GPU driver reset, out of memory on low-RAM PCs) used to leave a blank window until restart.
+  win.webContents.on('render-process-gone', (_e, details) => {
+    if (details.reason === 'clean-exit' || win.isDestroyed()) return;
+    try { win.reload(); } catch (_) { /* window is closing */ }
+  });
+  win.on('unresponsive', () => { /* keep the window: the audio engine may just be busy decoding a large file */ });
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+  if (process.env.WAVEFRAME_SELFTEST === '1') {
+    win.webContents.once('did-finish-load', () => {
+      setTimeout(async () => {
+        let code = 1;
+        try {
+          const results = await win.webContents.executeJavaScript('window.__selfTest()');
+          for (const r of results) console.log(`${r.ok ? 'PASS' : 'FAIL'} ${r.name}${r.extra ? ' — ' + r.extra : ''}`);
+          code = results.every((r) => r.ok) ? 0 : 1;
+        } catch (e) { console.log('FAIL self-test could not run: ' + e); }
+        app.exit(code);
+      }, 1500);
+    });
+  }
   win.on('closed', () => { if (mainWin === win) mainWin = null; });
   updateJumpList();
 

@@ -84,6 +84,7 @@
           <button id="btnNext" title="Επόμενο" aria-label="Επόμενο">⏭</button>
           <button id="btnShuffle" class="toggle-icon" title="Τυχαία αναπαραγωγή" aria-label="Τυχαία αναπαραγωγή">🔀</button>
           <button id="btnRepeat" class="toggle-icon" title="Επανάληψη" aria-label="Επανάληψη">🔁</button>
+          <button id="btnSleep" class="toggle-icon" title="Χρονοδιακόπτης ύπνου" aria-label="Χρονοδιακόπτης ύπνου" data-i18n-title="player.sleep">⏾</button>
           <button id="btnMute" class="toggle-icon" title="Σίγαση" aria-label="Σίγαση">🔊</button>
           <input type="range" id="volume" min="0" max="100" value="80" />
         </div>
@@ -135,9 +136,14 @@
             <div class="panel">
               <div class="panel-header-row">
                 <h2 data-i18n="enhance.myPresets">Τα Presets μου</h2>
+                <button id="btnExportApo" class="small-btn" data-i18n="enhance.exportApo">Εξαγωγή για Opsis / Equalizer APO</button>
                 <button id="btnSavePreset" class="small-btn" data-i18n="enhance.save">Αποθήκευση</button>
               </div>
               <div id="userPresetList" class="user-preset-list"></div>
+            </div>
+            <div class="panel">
+              <h2 data-i18n="enhance.loudness">Ένταση (LUFS)</h2>
+              <p id="loudnessInfo" class="empty-hint" data-i18n="enhance.loudnessNone">Παίξε ένα κομμάτι για να μετρηθεί η ένταση του.</p>
             </div>
           </div>
           <div class="enhance-col">
@@ -407,6 +413,7 @@
 
   <script src="i18n.js"></script>
   <script src="backgrounds.js"></script>
+  <script src="audiolib.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
