@@ -1,13 +1,28 @@
-Άδεια Χρήσης — Waveframe
+﻿Άδεια χρήσης — Waveframe
 
-Το Waveframe διανέμεται ως κλειστού κώδικα λογισμικό, με επιφύλαξη παντός δικαιώματος. Χρησιμοποιώντας αυτή την εφαρμογή αποδέχεστε ότι παρέχεται «ως έχει», χωρίς καμία εγγύηση, και ο δημιουργός δεν φέρει καμία ευθύνη για οποιαδήποτε απώλεια δεδομένων ή ζημιά που προκύψει από τη χρήση της.
+Το Waveframe διανέμεται με την άδεια MIT (το κείμενο δίνεται στα αγγλικά, όπως δημοσιεύεται):
 
-Το Waveframe χρησιμοποιεί τα εξής open-source στοιχεία, το καθένα με τη δική του άδεια:
-- Electron — άδεια MIT
-- music-metadata — άδεια MIT
-- adm-zip — άδεια MIT
-- FFmpeg — άδεια LGPL (μέσω του συστήματός σας ή προαιρετική λήψη κατ' επιλογήν από τις Ρυθμίσεις)
+MIT License
 
-Πλήρες κείμενο αδειών τρίτων: μέσα στην εφαρμογή, Ρυθμίσεις → Σχετικά → «Οδηγίες, ιστορικό & βοήθεια» → καρτέλα «Άδεια χρήσης».
+Copyright (c) 2026 giorstergiopoulos-design
 
-Πατώντας «Συμφωνώ» αποδέχεστε τους παραπάνω όρους.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+Άδειες τρίτων: Electron/Chromium, music-metadata, adm-zip (MIT)· FFmpeg (LGPL v3, δεν περιλαμβάνεται στον installer — κατεβαίνει μόνο μετά από επιβεβαίωσή σου). Τα πλήρη κείμενα βρίσκονται στο φάκελο «licenses» της εγκατάστασης και στο παράθυρο Βοήθεια → Άδεια χρήσης.

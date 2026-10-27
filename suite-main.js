@@ -198,7 +198,7 @@ function init({ getMainWin, getTheme, isMini, isTrusted, onLang }) {
       const inst = S.findInstalled(a, { entries, exists: (p) => fs.existsSync(p), env: process.env });
       const self = a.id === 'waveframe';
       return {
-        id: a.id, name: a.name, self,
+        id: a.id, name: a.name, self, hasIcon: !self && fs.existsSync(path.join(__dirname, 'renderer', 'appicons', `${a.id}.png`)),
         tagline: pick(a.tagline, lang) || '',
         bullets: pick(a.capabilities, lang) || [],
         installed: self ? true : inst.installed, version: self ? app.getVersion() : inst.version,

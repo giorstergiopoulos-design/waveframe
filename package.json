@@ -1,10 +1,10 @@
 {
   "name": "waveframe",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "Waveframe - real-time audio enhancer and player",
   "main": "main.js",
   "author": "",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder --win",
@@ -90,21 +90,9 @@
     ],
     "win": {
       "target": [
-        "portable",
-        "nsis"
+        "portable"
       ],
       "icon": "icon.ico"
-    },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "Waveframe",
-      "multiLanguageInstaller": true,
-      "runAfterFinish": true,
-      "deleteAppDataOnUninstall": false
     }
   }
 }

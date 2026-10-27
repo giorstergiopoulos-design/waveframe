@@ -1,5 +1,5 @@
 'use strict';
-// Audio converter tab (1.8.0). Loaded lazily the first time the tab is opened (see app.js), so it costs nothing until then.
+// Export / convert tab (1.8.0 converter, merged with the old Export tab in 1.9.0: playlist tracks and files share one list and one set of options). Loaded lazily the first time the tab is opened (see app.js), so it costs nothing until then.
 // Two routes per file:
 //  - direct:    ffmpeg (main process) reads the original and does decode / trim / rate / channels / codec;
 //  - processed: used when loudness normalisation or the Enhancer's effects are requested, or when no ffmpeg exists and the output is WAV:
@@ -83,21 +83,27 @@
 
   async function convertFile(item, o, ctx) {
     const id = item.id;
-    const processed = o.normalize || o.effects || !ctx.ffmpeg;
+    const out = { outMode: ctx.outMode || 'default', outDir: ctx.outDir };
+    const isTrack = item.kind === 'track';
+    const processed = isTrack || o.normalize || o.effects || !ctx.ffmpeg;
     if (!processed) {
-      const r = await api.convDirect({ id, path: item.path, options: o });
+      const r = await api.convDirect({ id, path: item.path, options: o, ...out });
       if (!r.ok) throw Object.assign(new Error(r.error || r.code), { code: r.code });
       return { output: r.output };
     }
-    const info = ctx.ffmpeg ? await api.convProbe(item.path) : null;
+    const info = ctx.ffmpeg && !isTrack ? await api.convProbe(item.path) : null;
     if (info && !info.hasAudio) throw Object.assign(new Error('no-audio'), { code: 'no-audio' });
     ctx.report(0.05);
-    let read = await api.convRead(item.path);
+    let read;
+    if (isTrack) {
+      const t0 = item.track; // playlist entry: a File from the picker or a URL
+      read = { bytes: new Uint8Array(t0.file ? await t0.file.arrayBuffer() : await (await fetch(t0.url)).arrayBuffer()) };
+    } else read = await api.convRead(item.path);
     if (!read || read.tooLarge) throw Object.assign(new Error('file too large to process in memory'), { code: 'too-large' });
     let decoded;
     try { decoded = await decode(read.bytes, info && info.sampleRate); }
     catch (_) {
-      const pre = ctx.ffmpeg ? await api.convPredecode(item.path, info && info.sampleRate) : null; // WMA, AIFF, video containers ...
+      const pre = ctx.ffmpeg && !isTrack ? await api.convPredecode(item.path, info && info.sampleRate) : null; // WMA, AIFF, video containers ...
       if (!pre) throw Object.assign(new Error('decode-failed'), { code: 'decode-failed' });
       decoded = await decode(pre.bytes, info && info.sampleRate);
     }
@@ -110,12 +116,27 @@
     const depth = o.format === 'wav' ? o.depth : 24;
     const wav = C.writeWav(p.channels, p.sampleRate, depth);
     ctx.setBase(0.5);
-    const r = await api.convEncode({ id, path: item.path, wav: new Uint8Array(wav), options: o, duration: p.channels[0].length / p.sampleRate });
+    const r = await api.convEncode({ id, ...(isTrack ? { name: item.name } : { path: item.path }), wav: new Uint8Array(wav), options: o, duration: p.channels[0].length / p.sampleRate, ...out });
     if (!r.ok) throw Object.assign(new Error(r.error || r.code), { code: r.code });
     return { output: r.output, lufs: p.lufs, gainDb: p.gainDb, limited: p.limited };
   }
 
   /* ---------------- UI ---------------- */
+
+  // the quality presets of the old Export tab
+  const PRESETS = [
+    { key: 'low', format: 'mp3', bitrate: 96, sampleRate: 22050 },
+    { key: 'medium', format: 'mp3', bitrate: 128, sampleRate: 44100 },
+    { key: 'high', format: 'mp3', bitrate: 320, sampleRate: 48000 },
+    { key: 'lossless', format: 'flac', depth: 16, sampleRate: 48000 },
+  ];
+  function applyPreset(p) {
+    $('convFormat').value = p.format; $('convMode').value = 'cbr';
+    if (p.bitrate) $('convBitrate').value = String(p.bitrate);
+    if (p.depth) $('convDepth').value = String(p.depth);
+    $('convRate').value = String(p.sampleRate);
+    $('convFormat').dispatchEvent(new Event('change'));
+  }
 
   const FORMAT_KEYS = ['mp3', 'flac', 'wav', 'aac', 'ogg', 'opus', 'aiff', 'alac', 'wma'];
   const FORMAT_LABEL = { mp3: 'MP3', flac: 'FLAC', wav: 'WAV', aac: 'AAC (M4A)', ogg: 'OGG Vorbis', opus: 'Opus', aiff: 'AIFF', alac: 'ALAC (M4A)', wma: 'WMA' };
@@ -132,7 +153,10 @@
   function field(labelKey, control, id) { return h('div', { class: 'conv-field', id }, [h('label', { class: 'field-label', 'data-i18n': labelKey, text: t(labelKey) }), control]); }
 
   function build() {
-    const saved = { ...C.DEFAULTS, ...loadSaved() };
+    const saved = { ...C.DEFAULTS, effects: true, ...loadSaved() };
+    const customDir = localStorage.getItem('waveframe.destFolder') || '';
+    // a folder picked in the old Export tab becomes the custom destination; otherwise Music\WaveFrame
+    const outMode = localStorage.getItem('waveframe.destMode') || (customDir ? 'custom' : 'default');
     root.textContent = '';
     const panel = h('div', { class: 'panel conv-panel' });
     panel.append(h('h2', { 'data-i18n': 'conv.title', text: t('conv.title') }), h('p', { class: 'hint', 'data-i18n': 'conv.hint', text: t('conv.hint') }));
@@ -140,8 +164,9 @@
     const drop = h('div', { class: 'conv-drop', id: 'convDrop', tabIndex: 0 }, [h('span', { 'data-i18n': 'conv.drop', text: t('conv.drop') })]);
     const list = h('div', { class: 'conv-list', id: 'convList' });
     const btnAdd = h('button', { class: 'small-btn', id: 'convAdd', 'data-i18n': 'conv.add', text: t('conv.add') });
+    const btnPlaylist = h('button', { class: 'small-btn', id: 'convFromPlaylist', 'data-i18n': 'conv.fromPlaylist', text: t('conv.fromPlaylist') });
     const btnClear = h('button', { class: 'small-btn', id: 'convClear', 'data-i18n': 'conv.clear', text: t('conv.clear') });
-    panel.append(drop, list, h('div', { class: 'settings-btn-row' }, [btnAdd, btnClear]));
+    panel.append(drop, list, h('div', { class: 'settings-btn-row' }, [btnAdd, btnPlaylist, btnClear]));
 
     const formatSel = select('convFormat', FORMAT_KEYS.map((k) => [k, FORMAT_LABEL[k]]), saved.format);
     const depthSel = select('convDepth', [[16, '16-bit'], [24, '24-bit'], [32, t('conv.depthFloat')]], saved.depth);
@@ -157,12 +182,19 @@
     const fx = h('input', { id: 'convFx', type: 'checkbox', checked: !!saved.effects });
     const suffix = h('input', { id: 'convSuffix', type: 'text', maxLength: 40, value: saved.suffix });
 
+    const presets = h('div', { class: 'conv-presets' }, PRESETS.map((p) => h('button', { class: 'small-btn', 'data-i18n': `conv.preset.${p.key}`, text: t(`conv.preset.${p.key}`), onclick: () => applyPreset(p) })));
+    const outSel = select('convOut', [['default', t('conv.out.default')], ['source', t('conv.out.source')], ['custom', t('conv.out.custom')]], outMode);
+    const outPath = h('span', { class: 'dest-path', id: 'convOutPath', text: customDir });
+    const outPick = h('button', { class: 'small-btn', id: 'convOutPick', 'data-i18n': 'conv.out.choose', text: t('conv.out.choose') });
+    const outRow = h('div', { class: 'dest-row', id: 'convOutRow' }, [outPath, outPick]);
     panel.append(
+      presets,
       h('div', { class: 'conv-grid' }, [
         field('conv.format', formatSel), field('conv.depth', depthSel, 'convDepthField'), field('conv.bitrate', bitrateSel, 'convBitrateField'),
         field('conv.mp3mode', modeSel, 'convModeField'), field('conv.vbrq', vbrSel, 'convVbrField'),
-        field('conv.rate', rateSel), field('conv.channels', chSel), field('conv.trimStart', tStart), field('conv.trimEnd', tEnd), field('conv.suffix', suffix),
+        field('conv.rate', rateSel), field('conv.channels', chSel), field('conv.trimStart', tStart), field('conv.trimEnd', tEnd), field('conv.suffix', suffix), field('conv.out', outSel),
       ]),
+      outRow,
       h('label', { class: 'conv-check' }, [norm, h('span', { 'data-i18n': 'conv.normalize', text: t('conv.normalize') }), h('span', { class: 'conv-inline' }, [h('span', { 'data-i18n': 'conv.target', text: t('conv.target') }), target])]),
       h('label', { class: 'conv-check' }, [fx, h('span', { 'data-i18n': 'conv.effects', text: t('conv.effects') })]),
       h('p', { class: 'hint', id: 'convNote', 'data-i18n': 'conv.processedNote', text: t('conv.processedNote') }),
@@ -190,6 +222,13 @@
       if (bitrates.length && !bitrates.includes(+bitrateSel.value)) bitrateSel.value = String(bitrates.includes(192) ? 192 : bitrates[Math.floor(bitrates.length / 2)]);
       $('convNote').classList.toggle('dep-hidden', !(norm.checked || fx.checked));
     };
+    const syncOut = () => { outRow.classList.toggle('dep-hidden', outSel.value !== 'custom'); localStorage.setItem('waveframe.destMode', outSel.value); };
+    outSel.addEventListener('change', syncOut); syncOut();
+    outPick.addEventListener('click', async () => {
+      const r = await api.chooseFolder();
+      if (r && !r.canceled) { outPath.textContent = r.folderPath; localStorage.setItem('waveframe.destFolder', r.folderPath); }
+    });
+    btnPlaylist.addEventListener('click', () => addTracks());
     for (const el of [formatSel, modeSel, norm, fx]) el.addEventListener('change', syncVisibility);
     syncVisibility();
 
@@ -208,9 +247,17 @@
     renderList();
   }
 
+  function addTracks() {
+    const list = typeof playlist !== 'undefined' ? playlist : [];
+    for (const t0 of list) {
+      if (!files.some((f) => f.track === t0)) files.push({ id: `c${Date.now().toString(36)}${++seq}`, kind: 'track', track: t0, name: t0.name || 'track', path: '', state: 'wait', pct: 0 });
+    }
+    renderList();
+  }
+
   function addPaths(paths) {
     for (const p of paths || []) {
-      if (typeof p === 'string' && !files.some((f) => f.path === p)) files.push({ id: `c${Date.now().toString(36)}${++seq}`, path: p, name: p.split(/[\\/]/).pop(), state: 'wait', pct: 0 });
+      if (typeof p === 'string' && !files.some((f) => f.path === p)) files.push({ id: `c${Date.now().toString(36)}${++seq}`, kind: 'file', path: p, name: p.split(/[\\/]/).pop(), state: 'wait', pct: 0 });
     }
     renderList();
   }
@@ -223,7 +270,7 @@
     for (const f of files) {
       const status = f.state === 'failed' ? fmt(t('conv.st.failed'), { why: f.err || '' }) : t(`conv.st.${f.state === 'work' ? 'work' : f.state}`);
       const row = h('div', { class: `conv-row ${f.state}` }, [
-        h('div', { class: 'conv-name', title: f.path, text: f.name }),
+        h('div', { class: 'conv-name', title: f.path || f.name, text: (f.kind === 'track' ? '\u266a ' : '') + f.name }),
         h('div', { class: 'conv-state', text: status + (f.note ? ` · ${f.note}` : '') }),
         h('div', { class: 'conv-bar' }, [h('div', { class: 'conv-bar-fill', id: `bar-${f.id}` })]),
       ]);
@@ -270,12 +317,13 @@
       if (!r.ok) { status.textContent = r.declined ? t('conv.ffmpegDeclined') : fmt(t('conv.ffmpegFailed'), { why: r.error || '' }); return; }
       st = await api.convStatus();
     }
+    if ($('convOut').value === 'custom' && !localStorage.getItem('waveframe.destFolder')) { status.textContent = t('conv.out.needFolder'); return; }
     for (const f of files) { f.state = 'wait'; f.pct = 0; f.err = ''; f.note = ''; f.out = ''; }
     $('convStart').classList.add('dep-hidden'); $('convCancel').classList.remove('dep-hidden'); $('convTrack').classList.remove('dep-hidden');
     status.textContent = warn;
     const queue = C.createQueue(files, async (item, qctx) => {
       current = item; base = 0; item.state = 'work'; renderList();
-      const ctx = { ffmpeg: st.ffmpeg, cancelled: qctx.cancelled, report: (p) => { item.pct = p; qctx.report(p); const b = $(`bar-${item.id}`); if (b) b.style.width = `${Math.round(p * 100)}%`; }, setBase: (b) => { base = b; } };
+      const ctx = { outMode: $('convOut').value, outDir: localStorage.getItem('waveframe.destFolder') || '', ffmpeg: st.ffmpeg, cancelled: qctx.cancelled, report: (p) => { item.pct = p; qctx.report(p); const b = $(`bar-${item.id}`); if (b) b.style.width = `${Math.round(p * 100)}%`; }, setBase: (b) => { base = b; } };
       try {
         const r = await convertFile(item, o, ctx);
         item.state = 'done'; item.out = r.output;

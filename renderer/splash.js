@@ -153,6 +153,7 @@
       const top = document.createElement('div'); top.className = 'app-top';
       const icon = document.createElement('div'); icon.className = 'app-icon';
       if (a.self) { icon.style.background = 'linear-gradient(135deg, var(--accent-2), var(--accent-3))'; icon.appendChild(barsIcon()); }
+      else if (a.hasIcon) { icon.classList.add('has-img'); const im = document.createElement('img'); im.alt = ''; im.src = `appicons/${a.id}.png`; icon.appendChild(im); }
       else { const h = hueOf(a.name); icon.style.background = `linear-gradient(135deg, hsl(${h} 70% 52%), hsl(${(h + 40) % 360} 70% 40%))`; icon.textContent = a.name.replace(/^Opsis\s+/, '').charAt(0).toUpperCase(); }
       const names = document.createElement('div');
       const nm = document.createElement('div'); nm.className = 'app-name'; nm.textContent = a.name;

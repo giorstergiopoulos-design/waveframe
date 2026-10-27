@@ -45,52 +45,54 @@ async function verifyDecodes(ffmpegPath, file) {
   return { ok: r.code === 0 && !/error/i.test(r.stderr.replace(/time=.*/g, '')), decodedSeconds: decoded, ...info };
 }
 
-function planOutput(input, options, exists = fs.existsSync) {
+// outDir (optional) puts the result in that folder instead of next to the input (created if missing).
+function planOutput(input, options, exists = fs.existsSync, outDir) {
   const spec = L.FORMATS[options.format];
-  const out = L.buildOutputPath({ inputPath: input, ext: spec.ext, suffix: options.suffix, pathApi: path, exists });
+  if (outDir) fs.mkdirSync(outDir, { recursive: true });
+  const out = L.buildOutputPath({ inputPath: input, ext: spec.ext, suffix: options.suffix, pathApi: path, exists, dir: outDir || undefined });
   const tmp = path.join(path.dirname(out), `.waveframe-${process.pid}-${crypto.randomBytes(4).toString('hex')}.${spec.ext}`);
   return { out, tmp };
 }
 
 // Moves the finished temp file to its final name; if that name got taken meanwhile, picks the next free one.
-function finalize(tmp, input, options) {
+function finalize(tmp, input, options, outDir) {
   const spec = L.FORMATS[options.format];
-  const out = L.buildOutputPath({ inputPath: input, ext: spec.ext, suffix: options.suffix, pathApi: path, exists: fs.existsSync });
+  const out = L.buildOutputPath({ inputPath: input, ext: spec.ext, suffix: options.suffix, pathApi: path, exists: fs.existsSync, dir: outDir || undefined });
   fs.renameSync(tmp, out);
   return out;
 }
 
-async function runToTemp({ ffmpegPath, input, options, mode, source, duration, onProgress }) {
-  const { tmp } = planOutput(input, options);
+async function runToTemp({ ffmpegPath, input, options, mode, source, duration, onProgress, outDir }) {
+  const { tmp } = planOutput(input, options, fs.existsSync, outDir);
   const args = L.buildFfmpegArgs({ input: source, output: tmp, options, mode });
   const run = runFfmpeg(ffmpegPath, args, { duration, onProgress });
   const promise = run.promise.then((r) => {
     if (r.code !== 0 || !fs.existsSync(tmp)) { try { fs.unlinkSync(tmp); } catch (_) { /* none */ } throw new Error(r.stderr.split(/\r?\n/).filter(Boolean).slice(-3).join(' ') || `ffmpeg exited with code ${r.code}`); }
-    return { output: finalize(tmp, input, options) };
+    return { output: finalize(tmp, input, options, outDir) };
   }, (e) => { try { fs.unlinkSync(tmp); } catch (_) { /* none */ } throw e; });
   return { promise, cancel: run.cancel };
 }
 
 // ffmpeg reads the original and does everything (decode any audio / video audio track, trim, rate, channels, codec).
-async function convertDirect({ ffmpegPath, input, options, onProgress }) {
+async function convertDirect({ ffmpegPath, input, options, onProgress, outDir }) {
   const info = await probe(ffmpegPath, input);
   if (!info.hasAudio) throw Object.assign(new Error('no-audio'), { code: 'no-audio' });
   const span = (options.trimEnd > 0 ? Math.min(options.trimEnd, info.duration || options.trimEnd) : info.duration) - options.trimStart;
-  return runToTemp({ ffmpegPath, input, options, mode: 'direct', source: input, duration: span > 0 ? span : info.duration, onProgress });
+  return runToTemp({ ffmpegPath, input, options, mode: 'direct', source: input, duration: span > 0 ? span : info.duration, onProgress, outDir });
 }
 
 // The renderer already applied trim/rate/channels/effects/gain and sent a WAV: for WAV output it is written as is, otherwise ffmpeg encodes it.
-async function convertFromWav({ ffmpegPath, input, wavBytes, options, onProgress, duration }) {
+async function convertFromWav({ ffmpegPath, input, wavBytes, options, onProgress, duration, outDir }) {
   if (options.format === 'wav') {
-    const { tmp } = planOutput(input, options);
+    const { tmp } = planOutput(input, options, fs.existsSync, outDir);
     fs.writeFileSync(tmp, Buffer.from(wavBytes));
     if (onProgress) onProgress(1);
-    return { promise: Promise.resolve({ output: finalize(tmp, input, options) }), cancel() {} };
+    return { promise: Promise.resolve({ output: finalize(tmp, input, options, outDir) }), cancel() {} };
   }
   if (!ffmpegPath) throw Object.assign(new Error('no-ffmpeg'), { code: 'no-ffmpeg' });
   const wavTmp = path.join(require('os').tmpdir(), `waveframe-conv-${process.pid}-${crypto.randomBytes(4).toString('hex')}.wav`);
   fs.writeFileSync(wavTmp, Buffer.from(wavBytes));
-  const job = await runToTemp({ ffmpegPath, input, options, mode: 'encode', source: wavTmp, duration, onProgress });
+  const job = await runToTemp({ ffmpegPath, input, options, mode: 'encode', source: wavTmp, duration, onProgress, outDir });
   const cleanup = () => { try { fs.unlinkSync(wavTmp); } catch (_) { /* none */ } };
   return { promise: job.promise.finally(cleanup), cancel: job.cancel };
 }

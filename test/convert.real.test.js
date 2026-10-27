@@ -153,3 +153,17 @@ test('the encode step reports a missing ffmpeg for non-WAV output (WAV needs non
   const w = await (await E.convertFromWav({ ffmpegPath: null, input: path.join(dir, 'x.wav'), wavBytes: wav, options: C.validateOptions({ format: 'wav', suffix: '-pure' }).options })).promise;
   assert.ok(fs.existsSync(w.output));
 });
+
+test('outDir: results go to the chosen folder (created on demand), named after the source, collisions numbered', opts, async () => {
+  const target = path.join(dir, 'Music', 'WaveFrame');
+  const v = C.validateOptions({ format: 'flac', suffix: '-out' });
+  const a = await (await E.convertDirect({ ffmpegPath: FFMPEG, input: src, options: v.options, outDir: target })).promise;
+  const b = await (await E.convertDirect({ ffmpegPath: FFMPEG, input: src, options: v.options, outDir: target })).promise;
+  assert.equal(path.dirname(a.output), target);
+  assert.equal(path.basename(a.output), 'tone-out.flac');
+  assert.equal(path.basename(b.output), 'tone-out (1).flac');
+  // a playlist track has no file on disk: a virtual source name inside the folder is used
+  const wav = C.writeWav([new Float32Array(4800)], 48000, 16);
+  const w = await (await E.convertFromWav({ ffmpegPath: null, input: path.join(target, 'Song title.src'), wavBytes: wav, options: C.validateOptions({ format: 'wav', suffix: '' }).options, outDir: target })).promise;
+  assert.equal(path.basename(w.output), 'Song title-converted.wav');
+});

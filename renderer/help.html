@@ -9,7 +9,7 @@
 </head>
 <body>
   <header class="help-header">
-    <h1>Waveframe <span id="helpVersion">v1.8.0</span></h1>
+    <h1>Waveframe <span id="helpVersion">v1.9.0</span></h1>
     <div class="help-tabs">
       <button class="help-tab active" data-tab="guide">Οδηγίες χρήσης</button>
       <button class="help-tab" data-tab="changelog">Ιστορικό εκδόσεων</button>
@@ -52,6 +52,18 @@
     </section>
 
     <section id="help-changelog" class="help-pane">
+      <div class="changelog-entry">
+        <div class="changelog-version">v1.9.0</div>
+        <ul>
+          <li>Οι καρτέλες Εξαγωγή και Μετατροπέας έγιναν μία: «Εξαγωγή / Μετατροπή». Κομμάτια της λίστας και αρχεία ήχου/βίντεο μπαίνουν στην ίδια λίστα, με κοινές ρυθμίσεις, έτοιμες ποιότητες (Χαμηλή/Μεσαία/Υψηλή/Χωρίς απώλειες) και όλες τις μορφές.</li>
+          <li>Τα νέα αρχεία αποθηκεύονται από προεπιλογή στο φάκελο Μουσική\WaveFrame (δημιουργείται αυτόματα)· μπορείς να διαλέξεις άλλον φάκελο ή «δίπλα στο αρχικό», και η επιλογή θυμάται.</li>
+          <li>Ο mini player δείχνει τώρα την οπτικοποίηση αντί για το κινούμενο φόντο, με νέο κουμπί 🎨 για αλλαγή οπτικοποίησης δίπλα στα κουμπιά ελέγχου· διορθώθηκε και το μέγεθος του mini παραθύρου.</li>
+          <li>Άδεια MIT για το Waveframe και πλήρη κείμενα των αδειών τρίτων (MIT, LGPL v3 και GPL v3 στην οποία παραπέμπει) στη Βοήθεια → Άδεια χρήσης και στο φάκελο «licenses» της εγκατάστασης.</li>
+          <li>Σωστά εικονίδια των εφαρμογών στο «Η οικογένεια Opsis»· νέο γραφικό του installer (Inno Setup) με το εικονίδιο του Waveframe σε όλες τις σελίδες· αρχεία SHA-256 για κάθε λήψη.</li>
+          <li>Προσβασιμότητα και διορθώσεις: οι διακόπτες είναι πλέον πραγματικοί διακόπτες (role=switch, aria-checked) και οι αρχικές τους καταστάσεις διαβάζονται από τη μηχανή ήχου· το «Επαναφορά εφέ» κλείνει πλέον και τον συμπιεστή, την αντήχηση και τον διεγέρτη αρμονικών.</li>
+          <li><strong>Έλεγχος σφαλμάτων 1.9.0 — βρέθηκαν / διορθώθηκαν / ανοιχτά.</strong> Βρέθηκαν και διορθώθηκαν (με test στο αυτοέλεγχο): (1) οι διακόπτες δεν είχαν role/aria και η αρχική τους κατάσταση δεν διαβαζόταν από τη μηχανή· (2) το «Επαναφορά εφέ» άφηνε ανοιχτούς συμπιεστή/αντήχηση/διεγέρτη· (3) τα ονόματα κομματιών και προεπιλογών εισάγονταν ως markup (innerHTML) — αρχείο με όνομα που περιέχει HTML ή αντίγραφο ασφαλείας με κακόβουλο όνομα/εικόνα μπορούσε να εισάγει στοιχεία στη διεπαφή· (4) η εισαγωγή αντιγράφου ασφαλείας δεν έλεγχε τον τύπο των δεδομένων (μη-αντικείμενο ή τιμές που δεν είναι κείμενο)· (5) uncaught promise AbortError όταν η αναπαραγωγή διακοπτόταν από γρήγορη παύση ή αλλαγή κομματιού· (6) το mini παράθυρο δεν μπορούσε να μικρύνει λόγω του ελάχιστου μεγέθους 1180×760· (7) το παλιό tutorial άνοιγε μαζί με τον οδηγό καλωσορίσματος (1.7.0). Επαληθεύτηκε με πραγματική εκτέλεση: αυτόματο πάτημα και των 118 κουμπιών/διακοπτών κάθε καρτέλας σε σκούρο και φωτεινό θέμα και με ζουμ 150%, με έλεγχο σφαλμάτων κονσόλας (τελικά 0) και ανίχνευση κομμένου κειμένου (0), συν το Electron self-test και 79 unit tests. <em>Ανοιχτά:</em> οι νέες συμβολοσειρές υπάρχουν μόνο σε ελληνικά και αγγλικά (οι υπόλοιπες 18 γλώσσες δεν έχουν μεταφραστεί ούτε ελεγχθεί ορθογραφικά)· οι προτάσεις «ένδειξη πώς εφαρμόζεται», «επαναφορά προεπιλογών ανά κάρτα» και αναζήτηση ρυθμίσεων δεν υλοποιήθηκαν· ο έλεγχος σε πραγματικά 150% DPI των Windows και με RTL δεν έγινε (χρησιμοποιήθηκε ζουμ του παραθύρου)· τα screenshots του αυτοματοποιημένου ελέγχου καλύφθηκαν από παράθυρα διαλόγου, άρα η οπτική επαλήθευση σε φωτεινό θέμα/150% είναι μερική.</li>
+        </ul>
+      </div>
       <div class="changelog-entry">
         <div class="changelog-version">v1.8.0</div>
         <ul>
@@ -183,20 +195,24 @@
     </section>
 
     <section id="help-license" class="help-pane">
-      <h2>Waveframe</h2>
-      <p>© <span id="licenseYear"></span> — Με επιφύλαξη παντός δικαιώματος (All rights reserved). Η άδεια χρήσης του Waveframe δεν έχει δημοσιευτεί ως ανοιχτού κώδικα.</p>
+      <h2>Waveframe — άδεια MIT</h2>
+      <p>© <span id="licenseYear"></span> giorstergiopoulos-design. Το Waveframe διανέμεται με την άδεια MIT (το κείμενο των αδειών δίνεται στα αγγλικά, όπως δημοσιεύεται).</p>
+      <details class="lic" open><summary>MIT License — Waveframe</summary><pre id="lic-waveframe"></pre></details>
 
       <h2>Άδειες τρίτων (Third-party licenses)</h2>
-      <p>Το Waveframe χρησιμοποιεί τα παρακάτω open-source στοιχεία:</p>
-      <ul>
-        <li><strong>Electron</strong> — άδεια MIT</li>
-        <li><strong>music-metadata</strong> — άδεια MIT</li>
-        <li><strong>adm-zip</strong> — άδεια MIT</li>
-        <li><strong>FFmpeg</strong> — άδεια LGPL. Το Waveframe δεν διανέμει δικό του FFmpeg· χρησιμοποιεί, με σειρά προτεραιότητας: (1) ένα FFmpeg που υπάρχει ήδη στο σύστημά σου (π.χ. από codec pack), ή (2) λήψη, κατόπιν επιλογής σου από τις Ρυθμίσεις, ενός LGPL build από το δημόσιο αποθετήριο BtbN FFmpeg-Builds. Δεν χρησιμοποιούνται στοιχεία αποκλειστικά άδειας GPL.</li>
-      </ul>
+      <p>Το Waveframe χρησιμοποιεί τα παρακάτω στοιχεία, το καθένα με τη δική του άδεια. Πάτησε σε ένα για να δεις το πλήρες κείμενο.</p>
+      <details class="lic"><summary>Electron — MIT (περιλαμβάνει το Chromium· οι άδειες του Chromium υπάρχουν στο αρχείο LICENSES.chromium.html του φακέλου εγκατάστασης)</summary><pre id="lic-electron"></pre></details>
+      <details class="lic"><summary>music-metadata — MIT</summary><pre id="lic-musicMetadata"></pre></details>
+      <details class="lic"><summary>adm-zip — MIT</summary><pre id="lic-admZip"></pre></details>
+      <details class="lic"><summary>FFmpeg — GNU LGPL v3 (build της BtbN, δεν περιλαμβάνεται στον installer· κατεβαίνει μόνο μετά από επιβεβαίωσή σου ή χρησιμοποιείται αυτό που έχεις στο PATH)</summary>
+        <p class="hint">Πηγαίος κώδικας και πληροφορίες: https://ffmpeg.org και https://github.com/BtbN/FFmpeg-Builds. Η LGPL v3 ενσωματώνει με παραπομπή την GPL v3, της οποίας το κείμενο ακολουθεί.</p>
+        <pre id="lic-lgpl3"></pre>
+        <details class="lic"><summary>GNU General Public License v3 (αναφέρεται από την LGPL v3)</summary><pre id="lic-gpl3"></pre></details>
+      </details>
     </section>
   </main>
 
+  <script src="licenses.js"></script>
   <script src="help.js"></script>
 </body>
 </html>

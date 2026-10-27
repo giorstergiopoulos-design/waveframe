@@ -244,3 +244,6 @@ body.family .logo .bar, body.closing .logo .bar { animation: none; }
 }
 body.reduced .logo .bar { animation: none; }
 body.reduced .page, body.reduced .page.active { transition: opacity .12s; transform: none; }
+
+.app-icon.has-img { background: none; }
+.app-icon.has-img img { width: 44px; height: 44px; object-fit: contain; display: block; }

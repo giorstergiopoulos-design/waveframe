@@ -111,3 +111,7 @@ kbd {
 .help-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .help-btn { font: inherit; padding: 7px 14px; border-radius: 9px; border: 1px solid var(--panel-border); background: transparent; color: var(--text); cursor: pointer; }
 .help-btn:hover { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+
+.lic { margin: 8px 0; border: 1px solid var(--panel-border); border-radius: 8px; padding: 6px 10px; }
+.lic summary { cursor: pointer; font-size: 13px; }
+.lic pre { white-space: pre-wrap; font-size: 11.5px; line-height: 1.45; max-height: 320px; overflow: auto; margin: 8px 0 2px; }

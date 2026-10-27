@@ -316,7 +316,7 @@ class AudioEngine {
     slot.gain.gain.setTargetAtTime(1, this.ctx.currentTime, 0.02);
     slot.el.playbackRate = this.state.tempo;
     slot.el.preservesPitch = this.state.preservePitch;
-    return slot.el.play();
+    return slot.el.play().catch((e) => { if (e && e.name !== 'AbortError') throw e; });
   }
 
   pauseActive() { this.slots.forEach((s) => s.el.pause()); }
@@ -376,7 +376,7 @@ class AudioEngine {
       this.resume();
       nextSlot.el.playbackRate = this.state.tempo;
       nextSlot.el.preservesPitch = this.state.preservePitch;
-      nextSlot.el.play();
+      nextSlot.el.play().catch(() => {});
       if (onReady) onReady(nextSlot);
       return;
     }
@@ -453,6 +453,9 @@ class AudioEngine {
     this.setBassBoost(0);
     this.setVolumeBoostDb(0);
     this.setSurround(0);
+    this.setCompressor(false);
+    this.setReverb(false);
+    this.setExciter(false);
   }
 
   // opts.tempo / opts.rate override the live tempo and the buffer's rate (the converter renders at tempo 1 and at the chosen sample rate).
@@ -720,14 +723,35 @@ function syncMiniBar() {
   if (item && item.picture) { artImg.src = item.picture; artEl.classList.add('has-art'); }
   else { artImg.removeAttribute('src'); artEl.classList.remove('has-art'); }
 }
-document.getElementById('btnMiniMode').addEventListener('click', () => {
+// In mini mode the live visualization replaces the animated page background: the SAME canvas is moved into the mini bar
+// (so there is only ever one drawing loop) and the page background is switched off while it is compact.
+function enterMiniMode() {
   document.body.classList.add('mini-mode');
   window.waveframe.setMiniMode(true);
+  document.getElementById('miniVis').appendChild(canvas);
+  Backgrounds.setMode('none');
   syncMiniBar();
-});
-document.getElementById('miniBarExpand').addEventListener('click', () => {
+  requestAnimationFrame(resizeCanvas);
+}
+function leaveMiniMode() {
   document.body.classList.remove('mini-mode');
   window.waveframe.setMiniMode(false);
+  visualizerWrap.prepend(canvas);
+  Backgrounds.setMode(localStorage.getItem('waveframe.bg') || 'equalizer');
+  requestAnimationFrame(resizeCanvas);
+}
+document.getElementById('btnMiniMode').addEventListener('click', enterMiniMode);
+document.getElementById('miniBarExpand').addEventListener('click', leaveMiniMode);
+// next visualization (skips the album-art-only entry); the choice is shared with the Player tab
+document.getElementById('miniBarVis').addEventListener('click', () => {
+  const modes = VIS_MODES.filter((m) => m.key !== 'none');
+  const i = modes.findIndex((m) => m.key === visMode);
+  const next = modes[(i + 1) % modes.length];
+  visMode = next.key;
+  localStorage.setItem('waveframe.visMode', visMode);
+  [...visPickerGrid.children].forEach((c) => c.classList.toggle('active', c.dataset.mode === visMode));
+  visualizerWrap.classList.toggle('mode-none', false);
+  document.getElementById('miniBarVis').title = next.label;
 });
 document.getElementById('miniBarPlay').addEventListener('click', async () => {
   if (currentTrackIndex === -1 && playlist.length > 0) { playTrackAt(0); return; }
@@ -950,7 +974,8 @@ function renderUserPresets() {
   list.forEach((p, idx) => {
     const row = document.createElement('div');
     row.className = 'user-preset-item';
-    row.innerHTML = `<span>${p.name}</span>`;
+    const nameEl = document.createElement('span'); nameEl.textContent = p.name; // preset names are user/backup data: never markup
+    row.appendChild(nameEl);
     const applyBtn = document.createElement('button');
     applyBtn.textContent = '▶';
     applyBtn.addEventListener('click', () => applyUserPreset(p));
@@ -1368,10 +1393,12 @@ function renderPlaylist() {
   playlist.forEach((item, idx) => {
     const li = document.createElement('li');
     li.className = idx === currentTrackIndex ? 'active' : '';
-    const thumb = item.picture
-      ? `<img class="playlist-thumb" src="${item.picture}" alt="" />`
-      : `<span class="playlist-thumb-fallback">🎵</span>`;
-    li.innerHTML = `<div class="playlist-track-info">${thumb}<span class="playlist-track-name">${item.name}</span></div>`;
+    // built with the DOM, not innerHTML: file names, tags and restored/imported playlists must never be interpreted as markup
+    const info = document.createElement('div'); info.className = 'playlist-track-info';
+    if (item.picture && /^data:image\//.test(item.picture)) { const im = document.createElement('img'); im.className = 'playlist-thumb'; im.alt = ''; im.src = item.picture; info.appendChild(im); }
+    else { const fb = document.createElement('span'); fb.className = 'playlist-thumb-fallback'; fb.textContent = '🎵'; info.appendChild(fb); }
+    const nm = document.createElement('span'); nm.className = 'playlist-track-name'; nm.textContent = item.name;
+    info.appendChild(nm); li.appendChild(info);
     li.addEventListener('click', () => playTrackAt(idx));
     const rm = document.createElement('button');
     rm.className = 'remove-track';
@@ -1386,42 +1413,7 @@ function renderPlaylist() {
     li.appendChild(rm);
     els.playlist.appendChild(li);
   });
-  renderExportTrackList();
   savePlaylist();
-}
-
-function renderExportTrackList() {
-  // Default: pre-select whatever is currently playing, once, the first
-  // time the playlist gets any tracks - after that the user's own
-  // checkbox choices are preserved across re-renders.
-  if (!exportSelectionInitialized && playlist.length > 0) {
-    selectedForExport = new Set([currentTrackIndex >= 0 ? currentTrackIndex : 0]);
-    exportSelectionInitialized = true;
-  }
-  // Drop selections that no longer exist (track removed).
-  selectedForExport = new Set([...selectedForExport].filter((i) => i >= 0 && i < playlist.length));
-
-  els.exportTrackList.innerHTML = '';
-  if (playlist.length === 0) {
-    els.exportTrackList.innerHTML = `<p class="empty-hint">${t('export.tracksEmpty')}</p>`;
-    return;
-  }
-  playlist.forEach((item, idx) => {
-    const row = document.createElement('label');
-    row.className = 'export-track-item';
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.checked = selectedForExport.has(idx);
-    cb.addEventListener('change', () => {
-      if (cb.checked) selectedForExport.add(idx);
-      else selectedForExport.delete(idx);
-    });
-    const span = document.createElement('span');
-    span.textContent = item.name;
-    row.appendChild(cb);
-    row.appendChild(span);
-    els.exportTrackList.appendChild(row);
-  });
 }
 
 els.crossfade.addEventListener('input', () => { engine.crossfadeSeconds = parseFloat(els.crossfade.value); });
@@ -1453,10 +1445,17 @@ els.btnResetFx.addEventListener('click', () => {
   els.bassBoost.value = '0'; els.bassBoostVal.textContent = '0 dB'; setKnobPct(els.knobBassBoost, 0);
   els.surround.value = '0'; els.surroundVal.textContent = '0%'; setKnobPct(els.knobSurround, 0);
   els.volBoost.value = '0'; els.volBoostVal.textContent = '0 dB'; setKnobPct(els.knobVolBoost, 0);
+  for (const sw of [els.swCompressor, els.swReverb, els.swExciter]) sw.classList.remove('active');
+  activePresetKey = null;
 });
-wireSwitch(els.swMasterEnable, (on) => engine.setMasterEnable(on), true);
+wireSwitch(els.swMasterEnable, (on) => engine.setMasterEnable(on), engine.state.masterEnabled);
+// Switches are <button>s: expose them as role=switch and keep aria-checked in step with the 'active' class (whoever toggles it).
 function wireSwitch(btn, onChange, initial = false) {
+  btn.setAttribute('role', 'switch');
   btn.classList.toggle('active', initial);
+  const sync = () => btn.setAttribute('aria-checked', btn.classList.contains('active') ? 'true' : 'false');
+  sync();
+  new MutationObserver(sync).observe(btn, { attributes: true, attributeFilter: ['class'] });
   btn.addEventListener('click', () => {
     const on = !btn.classList.contains('active');
     btn.classList.toggle('active', on);
@@ -1467,134 +1466,19 @@ function setSwitchState(btn, on, onChange) {
   btn.classList.toggle('active', on);
   onChange(on);
 }
-wireSwitch(els.swCompressor, (on) => engine.setCompressor(on));
-wireSwitch(els.swReverb, (on) => engine.setReverb(on));
-wireSwitch(els.swExciter, (on) => engine.setExciter(on));
+wireSwitch(els.swCompressor, (on) => engine.setCompressor(on), engine.state.compressor);
+wireSwitch(els.swReverb, (on) => engine.setReverb(on), engine.state.reverb);
+wireSwitch(els.swExciter, (on) => engine.setExciter(on), engine.state.exciter);
 wireSwitch(document.getElementById('swNormalize'), (on) => {
   engine.setNormalizationEnabled(on);
   const item = playlist[currentTrackIndex];
   engine.setNormalizationGain(item && typeof item.normGain === 'number' ? item.normGain : 1);
-}, true);
-wireSwitch(els.swPreservePitch, (on) => engine.setPreservePitch(on), true);
+}, engine.state.normalizationEnabled);
+wireSwitch(els.swPreservePitch, (on) => engine.setPreservePitch(on), engine.state.preservePitch);
 els.tempo.addEventListener('input', () => {
   const rate = parseFloat(els.tempo.value);
   engine.setTempo(rate);
   els.tempoVal.textContent = `${rate.toFixed(2)}x`;
-});
-
-/* ---- export ---- */
-async function initFormats() {
-  availableFormats = await window.waveframe.getFormats();
-  els.formatGrid.innerHTML = '';
-  Object.entries(availableFormats).forEach(([key, spec], idx) => {
-    const btn = document.createElement('button');
-    btn.className = 'format-btn' + (idx === 0 ? ' active' : '');
-    btn.textContent = spec.name;
-    btn.dataset.format = key;
-    btn.addEventListener('click', () => {
-      selectedFormat = key;
-      [...els.formatGrid.children].forEach((b) => b.classList.toggle('active', b === btn));
-    });
-    els.formatGrid.appendChild(btn);
-  });
-  selectedFormat = Object.keys(availableFormats)[0] || 'wav';
-}
-initFormats();
-
-[...els.qualityGrid.children].forEach((btn) => {
-  btn.addEventListener('click', () => {
-    selectedQuality = btn.dataset.q;
-    [...els.qualityGrid.children].forEach((b) => b.classList.toggle('active', b === btn));
-  });
-});
-
-let chosenDestFolder = localStorage.getItem('waveframe.destFolder') || window.waveframe.musicPath || null;
-if (chosenDestFolder) els.destPath.textContent = chosenDestFolder;
-
-els.btnChooseFolder.addEventListener('click', async () => {
-  const result = await window.waveframe.chooseFolder();
-  if (result.canceled) return;
-  chosenDestFolder = result.folderPath;
-  localStorage.setItem('waveframe.destFolder', chosenDestFolder);
-  els.destPath.textContent = chosenDestFolder;
-});
-
-window.waveframe.onExportProgress((pct) => {
-  els.progressFill.style.width = `${Math.round(pct * 100)}%`;
-});
-
-async function exportOneTrack(item, q, format) {
-  const arrayBuf = item.file ? await item.file.arrayBuffer() : await (await fetch(item.url)).arrayBuffer();
-  // Same sample-rate behaviour as before (device rate), but the context is now CLOSED: it used to leak one live
-  // AudioContext per exported track, and Chromium refuses to create new ones after a few.
-  const decodeCtx = new (window.AudioContext || window.webkitAudioContext)();
-  let decoded;
-  try {
-    decoded = await decodeCtx.decodeAudioData(arrayBuf);
-  } catch (err) {
-    const decodeErr = new Error('decode-failed');
-    decodeErr.code = 'decode-failed';
-    throw decodeErr;
-  } finally {
-    decodeCtx.close().catch(() => {});
-  }
-  const rendered = await engine.renderOffline(decoded);
-  const wavBuffer = encodeWavBuffer(rendered);
-  const bitrate = format === 'opus' ? (OPUS_BITRATES[selectedQuality] || 96) : q.bitrate;
-  return window.waveframe.exportAudio(wavBuffer, {
-    format,
-    bitrate,
-    sampleRate: q.sampleRate,
-    suggestedName: item.name || 'waveframe-export',
-    destFolder: chosenDestFolder,
-    duration: rendered.duration,
-  });
-}
-
-els.btnExport.addEventListener('click', async () => {
-  const items = [...selectedForExport].sort((a, b) => a - b).map((i) => playlist[i]).filter(Boolean);
-  if (items.length === 0) { els.exportStatus.textContent = t('export.needTrack'); return; }
-
-  els.btnExport.disabled = true;
-  els.progressTrack.classList.remove('dep-hidden');
-  const q = QUALITY[selectedQuality];
-  const format = selectedQuality === 'lossless' ? 'flac' : selectedFormat;
-  const results = [];
-
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
-    els.progressFill.style.width = '0%';
-    const label = items.length > 1
-      ? t('export.exportingProgress').replace('{n}', i + 1).replace('{total}', items.length).replace('{name}', item.name)
-      : t('export.decoding');
-    els.exportStatus.textContent = label;
-    try {
-      const result = await exportOneTrack(item, q, format);
-      results.push({ item, result });
-      if (result.error === 'missing-ffmpeg') {
-        els.exportStatus.textContent = t('export.error') + t('settings.depsMissing') + ' (FFmpeg) — ' + t('tab.settings');
-        break;
-      }
-    } catch (err) {
-      console.error(err);
-      results.push({ item, error: err });
-      const msg = err.code === 'decode-failed' ? t('export.decodeError') : err.message;
-      els.exportStatus.textContent = `${item.name}: ${t('export.error')}${msg}`;
-    }
-  }
-
-  const okCount = results.filter((r) => r.result && !r.result.canceled && !r.result.error).length;
-  if (results.every((r) => r.result?.canceled)) els.exportStatus.textContent = t('export.canceled');
-  else if (okCount > 0 && okCount === items.length) {
-    els.exportStatus.textContent = items.length > 1
-      ? `${t('export.done')} (${okCount}/${items.length})`
-      : `${t('export.done')} ${results[0].result.filePath}`;
-  } else if (okCount > 0) {
-    els.exportStatus.textContent = `${t('export.done')} (${okCount}/${items.length})`;
-  }
-
-  setTimeout(() => els.progressTrack.classList.add('dep-hidden'), 1200);
-  els.btnExport.disabled = false;
 });
 
 /* ---- settings: language carousel ---- */
@@ -2013,8 +1897,11 @@ els.btnBackupImport.addEventListener('click', async () => {
   const result = await window.waveframe.importSettings();
   if (result.canceled) return;
   if (!result.ok) { els.backupStatus.textContent = result.error || t('settings.backupError'); return; }
-  Object.entries(result.data).forEach(([key, value]) => {
-    if (key.startsWith('waveframe.')) localStorage.setItem(key, value);
+  // a backup file is untrusted input: it must be a plain object and only waveframe.* string values are restored
+  const data = result.data && typeof result.data === 'object' && !Array.isArray(result.data) ? result.data : null;
+  if (!data) { els.backupStatus.textContent = t('settings.backupError'); return; }
+  Object.entries(data).forEach(([key, value]) => {
+    if (key.startsWith('waveframe.') && typeof value === 'string' && value.length < 5 * 1024 * 1024) localStorage.setItem(key, value);
   });
   await showAlertDialog(t('settings.backupImportTitle'), t('settings.backupImportDone'));
   location.reload();
@@ -2466,7 +2353,7 @@ function renderLoop() {
     // Skip the (potentially expensive, especially the particle-based) canvas
     // drawing when the Player tab isn't even visible — real CPU/battery win,
     // since a hidden `.tab-pane { display: none }` doesn't stop rAF on its own.
-    if (tabPlayerEl.classList.contains('active')) {
+    if (tabPlayerEl.classList.contains('active') || document.body.classList.contains('mini-mode')) {
       if (visMode !== prevVisMode) { particles = []; prevVisMode = visMode; }
       if (visMode !== 'none') {
         engine.analyser.getByteFrequencyData(freqData);
@@ -2591,6 +2478,24 @@ window.__selfTest = async function () {
     const txt = WaveframeAudio.toEqualizerApo({ bands: [...engine.state.eqBands], bassBoost: engine.state.bassBoost });
     check('EQ export reflects the engine', /Preamp: -6\.0 dB/.test(txt) && /Fc 32 Hz Gain 6\.0/.test(txt), txt.split('\r\n')[1]);
     engine.applyEqBands([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    // #7: switches are real switches whose initial state comes from the engine
+    const sws = ['swMasterEnable', 'swNormalize', 'swPreservePitch', 'swCompressor', 'swReverb', 'swExciter', 'swTrackNotif', 'swAutostart'].map((id) => document.getElementById(id));
+    check('switches expose role=switch and aria-checked', sws.every((b) => b && b.getAttribute('role') === 'switch' && /^(true|false)$/.test(b.getAttribute('aria-checked'))));
+    check('switch initial states mirror the engine', document.getElementById('swMasterEnable').classList.contains('active') === engine.state.masterEnabled && document.getElementById('swPreservePitch').classList.contains('active') === engine.state.preservePitch && document.getElementById('swNormalize').classList.contains('active') === engine.state.normalizationEnabled);
+    els.swReverb.click();
+    await new Promise((r) => setTimeout(r, 0)); // MutationObserver callbacks run as microtasks
+    check('aria-checked follows a click', els.swReverb.getAttribute('aria-checked') === 'true' && engine.state.reverb === true);
+    // #8: "reset effects" also closes compressor / reverb / exciter
+    els.swCompressor.click(); els.swExciter.click();
+    els.btnResetFx.click();
+    await new Promise((r) => setTimeout(r, 0));
+    check('reset effects turns compressor, reverb and exciter off (engine and UI)', !engine.state.compressor && !engine.state.reverb && !engine.state.exciter && [els.swCompressor, els.swReverb, els.swExciter].every((b) => !b.classList.contains('active') && b.getAttribute('aria-checked') === 'false'));
+    // bug audit: names from files / backups are text, never markup
+    const savedList = playlist, savedIdx = currentTrackIndex;
+    playlist = [{ name: '<b id="xss-probe">bold</b>', picture: '" onerror="1' }]; currentTrackIndex = -1;
+    renderPlaylist();
+    check('playlist names are rendered as text (no markup injection)', !document.getElementById('xss-probe') && els.playlist.textContent.includes('<b id="xss-probe">'));
+    playlist = savedList; currentTrackIndex = savedIdx; renderPlaylist();
     check('i18n has the new keys', t('player.sleep') !== 'player.sleep' && t('enhance.exportApo') !== 'enhance.exportApo');
   } catch (e) { check('self-test threw', false, e && e.stack || e); }
   return out;

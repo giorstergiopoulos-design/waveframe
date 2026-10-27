@@ -10,7 +10,7 @@ const E = require('./conv-engine.js');
 
 const MAX_READ = 600 * 1024 * 1024; // the renderer decodes the whole file in memory
 
-function init({ getMainWin, resolveFfmpegPath, installFfmpeg, confirmFfmpegDownload }) {
+function init({ getMainWin, resolveFfmpegPath, installFfmpeg, confirmFfmpegDownload, defaultOutDir }) {
   const trusted = (e) => { const w = getMainWin(); return !!w && !w.isDestroyed() && e.sender === w.webContents; };
   const jobs = new Map(); // id -> { cancel }
   const cancelledEarly = new Set(); // cancel requests that arrived while the job was still being prepared
@@ -59,6 +59,15 @@ function init({ getMainWin, resolveFfmpegPath, installFfmpeg, confirmFfmpegDownl
     try { return { bytes: await E.predecodeToWav({ ffmpegPath: ff, input: p, sampleRate: Number.isFinite(sampleRate) && sampleRate >= 8000 && sampleRate <= 192000 ? sampleRate : 0 }) }; } catch (_) { return null; }
   });
 
+  // 'default' = MusicWaveFrame (created on demand), 'custom' = a folder the user picked, 'source' = next to the original (undefined).
+  function resolveOutDir(req, hasSource) {
+    if (req.outMode === 'custom' && typeof req.outDir === 'string' && path.isAbsolute(req.outDir)) return req.outDir;
+    if (req.outMode === 'source' && hasSource) return undefined;
+    return defaultOutDir();
+  }
+
+  ipcMain.handle('conv:default-dir', (e) => (trusted(e) ? defaultOutDir() : null));
+
   async function track(id, make) {
     try {
       const job = await make();
@@ -75,17 +84,22 @@ function init({ getMainWin, resolveFfmpegPath, installFfmpeg, confirmFfmpegDownl
     if (!v.ok) return { ok: false, code: 'bad-options', error: v.errors.join(',') };
     const ff = await resolveFfmpegPath();
     if (!ff) return { ok: false, code: 'no-ffmpeg' };
-    return track(req.id, () => E.convertDirect({ ffmpegPath: ff, input: req.path, options: v.options, onProgress: (p) => sendProgress({ id: req.id, pct: p }) }));
+    return track(req.id, () => E.convertDirect({ ffmpegPath: ff, input: req.path, options: v.options, onProgress: (p) => sendProgress({ id: req.id, pct: p }), outDir: resolveOutDir(req, true) }));
   });
 
   ipcMain.handle('conv:encode', async (e, req) => {
-    if (!trusted(e) || !req || !okId(req.id) || !okFile(req.path) || !(req.wav instanceof Uint8Array || req.wav instanceof ArrayBuffer)) return { ok: false, code: 'bad-request' };
+    const hasSource = !!req && okFile(req.path);
+    const hasName = !!req && typeof req.name === 'string' && req.name.length > 0 && req.name.length < 200;
+    if (!trusted(e) || !req || !okId(req.id) || !(hasSource || hasName) || !(req.wav instanceof Uint8Array || req.wav instanceof ArrayBuffer)) return { ok: false, code: 'bad-request' };
     const v = L.validateOptions(req.options);
     if (!v.ok) return { ok: false, code: 'bad-options', error: v.errors.join(',') };
     const ff = v.options.format === 'wav' ? null : await resolveFfmpegPath();
     if (v.options.format !== 'wav' && !ff) return { ok: false, code: 'no-ffmpeg' };
     const wavBytes = req.wav instanceof ArrayBuffer ? new Uint8Array(req.wav) : req.wav;
-    return track(req.id, () => E.convertFromWav({ ffmpegPath: ff, input: req.path, wavBytes, options: v.options, duration: Number(req.duration) || 0, onProgress: (p) => sendProgress({ id: req.id, pct: p }) }));
+    const outDir = resolveOutDir(req, hasSource);
+    // tracks that come from the playlist have no file on disk: name them after the track inside the output folder
+    const input = hasSource ? req.path : path.join(outDir, `${req.name.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_').trim() || 'track'}.src`);
+    return track(req.id, () => E.convertFromWav({ ffmpegPath: ff, input, wavBytes, options: v.options, duration: Number(req.duration) || 0, onProgress: (p) => sendProgress({ id: req.id, pct: p }), outDir }));
   });
 
   ipcMain.on('conv:cancel', (e, id) => {
@@ -113,7 +127,7 @@ function init({ getMainWin, resolveFfmpegPath, installFfmpeg, confirmFfmpegDownl
         await loadConverter();
         const v = WaveframeConv.validateOptions(${JSON.stringify(opts)});
         if (!v.ok) return { error: v.errors.join() };
-        try { const r = await WaveframeConverter.convertFile({ id: 'self1', path: ${JSON.stringify(src)} }, v.options, { ffmpeg: ${!!ff}, cancelled: () => false, report() {}, setBase() {} }); return r; }
+        try { const r = await WaveframeConverter.convertFile({ id: 'self1', path: ${JSON.stringify(src)} }, v.options, { ffmpeg: ${!!ff}, outMode: 'source', cancelled: () => false, report() {}, setBase() {} }); return r; }
         catch (e) { return { error: String(e && e.message || e) }; }
       })()`);
       check('converter tab skeleton exists but is empty before first open', (await win.webContents.executeJavaScript("document.getElementById('tab-converter').children.length")) === 0);

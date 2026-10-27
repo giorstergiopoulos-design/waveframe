@@ -1,6 +1,6 @@
 'use strict';
 
-document.getElementById('helpVersion').textContent = `v${window.waveframe?.version || '1.8.0'}`;
+document.getElementById('helpVersion').textContent = `v${window.waveframe?.version || '1.9.0'}`;
 document.getElementById('licenseYear').textContent = String(new Date().getFullYear());
 
 window.waveframe?.onThemeSync?.((theme) => {
@@ -18,3 +18,6 @@ document.querySelectorAll('.help-tab').forEach((btn) => {
 
 document.getElementById('helpWelcome').addEventListener('click', () => window.waveframe?.openWelcome?.());
 document.getElementById('helpFamily').addEventListener('click', () => window.waveframe?.openFamily?.());
+
+// full license texts (renderer/licenses.js)
+for (const [k, v] of Object.entries(window.WAVEFRAME_LICENSES || {})) { const el = document.getElementById(`lic-${k}`); if (el) el.textContent = v; }

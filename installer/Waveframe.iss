@@ -4,7 +4,7 @@
 ; Greek.isl is the unofficial community translation from the Inno Setup repository (copied in Languages\ so the script compiles anywhere).
 
 #ifndef MyAppVersion
-  #define MyAppVersion "1.8.0"
+  #define MyAppVersion "1.9.0"
 #endif
 #define MyAppName "Waveframe"
 #define MyAppExeName "Waveframe.exe"
@@ -22,6 +22,9 @@ DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 UninstallDisplayIcon={app}\{#MyAppExeName}
 SetupIconFile=..\icon.ico
+; Waveframe artwork instead of the default Inno disk-and-box (two sizes each for high-DPI)
+WizardImageFile=images\wizard-164x314.bmp,images\wizard-246x471.bmp
+WizardSmallImageFile=images\small-55x55.bmp,images\small-110x110.bmp
 OutputDir=output
 OutputBaseFilename=Waveframe.Setup.{#MyAppVersion}
 Compression=lzma2/max
@@ -52,6 +55,9 @@ Name: "assoc"; Description: "{cm:AssocTask}"; Flags: unchecked
 
 [Files]
 Source: "{#MySourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+Source: "..\licenses\*"; DestDir: "{app}\licenses"; Flags: ignoreversion
+Source: "..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.Waveframe.txt"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"

@@ -346,10 +346,12 @@ function createWindow() {
       normalBounds = win.getBounds();
       win.setAlwaysOnTop(true);
       win.setResizable(false);
+      win.setMinimumSize(340, 130); // the normal 1180x760 floor would otherwise keep the window from shrinking
       win.setSize(340, 130);
     } else {
       win.setAlwaysOnTop(false);
       win.setResizable(true);
+      win.setMinimumSize(WINDOW_WIDTH, WINDOW_HEIGHT);
       if (normalBounds) win.setBounds(normalBounds);
       else win.setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
       normalBounds = null;
@@ -361,8 +363,6 @@ function createWindow() {
   ipcMain.on('app:version-sync', (event) => { event.returnValue = app.getVersion(); });
   ipcMain.on('paths:music-sync', (event) => { event.returnValue = app.getPath('music'); });
   ipcMain.on('help:open', () => createHelpWindow(win));
-
-  ipcMain.handle('export:formats', () => FORMATS);
 
   ipcMain.handle('deps:check', async () => {
     const ffmpegPath = await resolveFfmpegPath();
@@ -438,71 +438,6 @@ function createWindow() {
     if (canceled || !filePaths[0]) return { canceled: true };
     return { canceled: false, folderPath: filePaths[0] };
   });
-
-  ipcMain.handle('export:save', async (event, { wavBuffer, format, bitrate, sampleRate, suggestedName, destFolder, duration }) => {
-    const spec = FORMATS[format] || FORMATS.wav;
-    const safeName = (suggestedName || 'waveframe-export').replace(/[<>:"/\\|?*\x00-\x1F]/g, '_').trim() || 'waveframe-export';
-    let filePath;
-    if (destFolder) {
-      filePath = path.join(destFolder, `${safeName}.${spec.ext}`);
-      let n = 1;
-      while (fs.existsSync(filePath)) {
-        filePath = path.join(destFolder, `${safeName} (${n}).${spec.ext}`);
-        n++;
-      }
-    } else {
-      const result = await dialog.showSaveDialog(win, {
-        defaultPath: `${safeName}.${spec.ext}`,
-        filters: spec.filters,
-      });
-      if (result.canceled || !result.filePath) return { canceled: true };
-      filePath = result.filePath;
-    }
-
-    const tmpWav = path.join(os.tmpdir(), `waveframe-${Date.now()}.wav`);
-    fs.writeFileSync(tmpWav, Buffer.from(wavBuffer));
-    const sendProgress = (pct) => win.webContents.send('export:progress', pct);
-
-    try {
-      if (format === 'wav') {
-        sendProgress(0.4);
-        fs.copyFileSync(tmpWav, filePath);
-        sendProgress(1);
-      } else {
-        const ffmpegPath = await resolveFfmpegPath();
-        if (!ffmpegPath) {
-          return { canceled: false, error: 'missing-ffmpeg' };
-        }
-        // Opus only supports 8/12/16/24/48kHz — force 48kHz regardless of the
-        // chosen quality tier's sample rate, or libopus rejects the encode outright.
-        const effectiveRate = format === 'opus' ? 48000 : sampleRate;
-        const args = ['-y', '-i', tmpWav, '-ar', String(effectiveRate), '-c:a', spec.codec];
-        if (!spec.lossless && bitrate) args.push('-b:a', `${bitrate}k`);
-        args.push(filePath);
-
-        await new Promise((resolve, reject) => {
-          const child = spawn(ffmpegPath, args);
-          let stderrBuf = '';
-          child.stderr.on('data', (chunk) => {
-            stderrBuf += chunk.toString();
-            const match = /time=(\d+):(\d+):(\d+\.\d+)/.exec(chunk.toString());
-            if (match && duration) {
-              const secs = parseInt(match[1], 10) * 3600 + parseInt(match[2], 10) * 60 + parseFloat(match[3]);
-              sendProgress(Math.min(0.98, secs / duration));
-            }
-          });
-          child.on('error', reject);
-          child.on('close', (code) => {
-            if (code === 0) { sendProgress(1); resolve(); }
-            else reject(new Error(stderrBuf.slice(-800) || `ffmpeg exited with code ${code}`));
-          });
-        });
-      }
-      return { canceled: false, filePath };
-    } finally {
-      fs.unlink(tmpWav, () => {});
-    }
-  });
 }
 
 function forwardJumpListAction(argv) {
@@ -533,7 +468,11 @@ if (!gotSingleInstanceLock) {
       isMini: () => !!mainWin && !mainWin.isDestroyed() && mainWin.getBounds().width < 700,
       isTrusted: (wc) => (!!mainWin && !mainWin.isDestroyed() && wc === mainWin.webContents) || (!!helpWindow && !helpWindow.isDestroyed() && wc === helpWindow.webContents),
     });
-    converterApi = converter.init({ getMainWin: () => mainWin, resolveFfmpegPath, installFfmpeg, confirmFfmpegDownload });
+    converterApi = converter.init({
+      getMainWin: () => mainWin, resolveFfmpegPath, installFfmpeg, confirmFfmpegDownload,
+      // default place for every encode: Windows Music folder > WaveFrame (created automatically)
+      defaultOutDir: () => { const d = path.join(app.getPath('music'), 'WaveFrame'); fs.mkdirSync(d, { recursive: true }); return d; },
+    });
     createWindow();
     forwardJumpListAction(process.argv);
     mainWin.webContents.once('did-finish-load', () => forwardOpenFile(process.argv));
