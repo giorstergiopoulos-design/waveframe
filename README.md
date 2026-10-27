@@ -25,6 +25,7 @@
 | ♿ Προσβασιμότητα | Πλήρης πλοήγηση με πληκτρολόγιο, ορατά focus rings, σεβασμός `prefers-reduced-motion` |
 | 🛡 Αξιοπιστία | Crash overlay με αρχείο καταγραφής αντί για σιωπηλή κατάρρευση, backup/restore ρυθμίσεων σε JSON (για συγχρονισμό μέσω OneDrive/Drive/Dropbox) |
 | 👋 Οδηγός & οικογένεια εφαρμογών | Οδηγός καλωσορίσματος 6 σελίδων σε κάθε νέα έκδοση (major.minor) που «μαζεύεται» στο λογότυπο, παρουσίαση «Η οικογένεια Opsis» με κατάσταση εγκατάστασης και λήψη εγκαταστάτη μόνο με επιβεβαίωση και έλεγχο SHA-256, ειδοποίηση για νέα έκδοση (μία φορά ανά έκδοση, με διακόπτη) |
+| 🔁 Μετατροπέας ήχου | Μετατροπή ήχου (και ήχου από βίντεο) σε WAV 16/24/32f, FLAC, MP3 (CBR/VBR), AAC, OGG, Opus, AIFF, ALAC, WMA· περικοπή, ρυθμός δειγματοληψίας, κανάλια, κανονικοποίηση σε στόχο LUFS (BS.1770), εφαρμογή του ισοσταθμιστή/εφέ, batch με ακύρωση. Το πρωτότυπο δεν αλλάζει ποτέ· το νέο αρχείο μπαίνει δίπλα του με επίθημα. Φορτώνει μόνο όταν ανοίξεις την καρτέλα |
 
 ### Εγκατάσταση
 
@@ -66,6 +67,7 @@ Waveframe is a free, real-time audio enhancer and media player for Windows 10/11
 | ♿ Accessibility | Full keyboard navigation, visible focus rings, respects `prefers-reduced-motion` |
 | 🛡 Reliability | Crash overlay with a log file instead of a silent failure, JSON backup/restore of all settings (for syncing via OneDrive/Drive/Dropbox) |
 | 👋 Guide & app family | 6-page welcome guide on every new major.minor version that shrinks into the header logo, “The Opsis family” showcase with install state and an installer download only after a confirmation and SHA-256 check, new-version notification (once per version, can be switched off) |
+| 🔁 Audio converter | Convert audio (and the audio of videos) to WAV 16/24/32f, FLAC, MP3 (CBR/VBR), AAC, OGG, Opus, AIFF, ALAC, WMA; trim, sample rate, channels, loudness normalisation to a LUFS target (BS.1770), optional equalizer/effects, batch with cancel. The original is never changed; the new file is saved next to it with a suffix. Loaded only when you open the tab |
 
 ### Installation
 
@@ -94,6 +96,12 @@ npm run dist        # produces a portable build + NSIS installer (Windows x64) i
 **Ελληνικά:** Το Waveframe δεν στέλνει τηλεμετρία. Οι μόνες συνδέσεις στο διαδίκτυο είναι αιτήματα GET προς το GitHub: (1) έλεγχος του τελευταίου release (`api.github.com`, το πολύ μία φορά την ημέρα, με ETag), που απενεργοποιείται από Ρυθμίσεις → Ειδοποίηση για νέες εκδόσεις· (2) η λίστα εφαρμογών της οικογένειας (`raw.githubusercontent.com`, το πολύ μία φορά την ημέρα, με ενσωματωμένο αντίγραφο εφεδρείας) και τα releases των εφαρμογών όταν ανοίξεις το παράθυρο «Η οικογένεια Opsis»· (3) λήψη εγκαταστάτη μόνο αν το επιβεβαιώσεις. Η λήψη επαληθεύεται με SHA-256 και ποτέ δεν εκτελείται αυτόματα. Δεν γίνεται αυτόματη εγκατάσταση ενημερώσεων.
 
 **English:** Waveframe sends no telemetry. The only network requests are GETs to GitHub: (1) the latest-release check (`api.github.com`, at most once a day, using ETag), which you can switch off in Settings → Notify about new versions; (2) the app-family list (`raw.githubusercontent.com`, at most once a day, with a built-in fallback copy) and the apps' releases when you open “The Opsis family”; (3) an installer download only if you confirm it. Downloads are verified with SHA-256 and never run automatically. Updates are never installed automatically.
+
+## Τρίτα μέρη / Third-party
+
+- **FFmpeg** (LGPL-2.1+/3, build της BtbN «win64-lgpl»): το Waveframe **δεν** το συμπεριλαμβάνει στον installer. Χρησιμοποιεί ffmpeg που υπάρχει ήδη στο PATH, αλλιώς το κατεβάζει μία φορά **μετά από επιβεβαίωσή σου** από https://github.com/BtbN/FFmpeg-Builds (έλεγχος SHA-256 από το release). Πηγαίος κώδικας: https://ffmpeg.org και το αποθετήριο της BtbN. Αν έχεις δικό σου ffmpeg στο PATH (π.χ. GPL build), ισχύει η άδειά του.
+- **FFmpeg** (LGPL build by BtbN): **not** bundled in the installer. Waveframe uses an ffmpeg already on PATH, otherwise downloads the LGPL build once **after you confirm** from https://github.com/BtbN/FFmpeg-Builds (SHA-256 checked against the release). Source: https://ffmpeg.org and the BtbN repository. If you put your own ffmpeg on PATH (e.g. a GPL build) its own licence applies.
+- Electron (MIT), music-metadata (MIT), adm-zip (MIT).
 
 ## Άδεια / License
 
