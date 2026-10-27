@@ -31,7 +31,7 @@ const MSG = {
   },
 };
 
-function init({ getMainWin, getTheme, isMini, isTrusted }) {
+function init({ getMainWin, getTheme, isMini, isTrusted, onLang }) {
   const userData = () => app.getPath('userData');
   const store = S.createStore(path.join(userData(), 'suite-state.json'), S.STATE_DEFAULTS, S.sanitizeState);
   let lang = 'el';
@@ -283,7 +283,7 @@ function init({ getMainWin, getTheme, isMini, isTrusted }) {
   });
   ipcMain.on('suite:settings', (e, s) => {
     if (!isTrusted(e.sender) || !s || typeof s !== 'object') return;
-    if (typeof s.lang === 'string' && /^[a-z]{2}$/.test(s.lang)) lang = s.lang;
+    if (typeof s.lang === 'string' && /^[a-z]{2}$/.test(s.lang)) { lang = s.lang; if (onLang) onLang(lang); }
     if (typeof s.notify === 'boolean') store.set({ notifyEnabled: s.notify });
   });
   ipcMain.handle('updates:check-now', async (e) => {

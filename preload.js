@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 const version = ipcRenderer.sendSync('app:version-sync');
 const musicPath = ipcRenderer.sendSync('paths:music-sync');
@@ -21,6 +21,18 @@ contextBridge.exposeInMainWorld('waveframe', {
   openFamily: () => ipcRenderer.send('suite:open', 'family'),
   setSuiteSettings: (s) => ipcRenderer.send('suite:settings', s),
   checkUpdatesNow: () => ipcRenderer.invoke('updates:check-now'),
+  pathForFile: (file) => { try { return webUtils.getPathForFile(file); } catch (_) { return ''; } },
+  convPick: () => ipcRenderer.invoke('conv:pick'),
+  convStatus: () => ipcRenderer.invoke('conv:status'),
+  convEnsureFfmpeg: () => ipcRenderer.invoke('conv:ensure-ffmpeg'),
+  convProbe: (p) => ipcRenderer.invoke('conv:probe', p),
+  convRead: (p) => ipcRenderer.invoke('conv:read', p),
+  convPredecode: (p, rate) => ipcRenderer.invoke('conv:predecode', p, rate),
+  convDirect: (req) => ipcRenderer.invoke('conv:direct', req),
+  convEncode: (req) => ipcRenderer.invoke('conv:encode', req),
+  convCancel: (id) => ipcRenderer.send('conv:cancel', id),
+  convReveal: (p) => ipcRenderer.send('conv:reveal', p),
+  onConvProgress: (cb) => ipcRenderer.on('conv:progress', (event, data) => cb(data)),
   openHelp: () => ipcRenderer.send('help:open'),
   getFormats: () => ipcRenderer.invoke('export:formats'),
   exportAudio: (wavBuffer, opts) => ipcRenderer.invoke('export:save', { wavBuffer, ...opts }),

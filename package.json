@@ -1,6 +1,6 @@
 {
   "name": "waveframe",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Waveframe - real-time audio enhancer and player",
   "main": "main.js",
   "author": "",
@@ -9,7 +9,7 @@
     "start": "electron .",
     "dist": "electron-builder --win",
     "smoke-test": "node smoke-test.js",
-    "test": "node --test test/audiolib.test.js test/suite.test.js",
+    "test": "node --test test/audiolib.test.js test/suite.test.js test/convert.test.js test/convert.real.test.js",
     "selftest": "node selftest.js"
   },
   "devDependencies": {
@@ -32,6 +32,8 @@
       "splash-preload.js",
       "suite.js",
       "suite-main.js",
+      "conv-engine.js",
+      "conv-main.js",
       "suite-apps.json",
       "icon.ico",
       "renderer/**/*"

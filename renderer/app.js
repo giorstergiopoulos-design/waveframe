@@ -455,13 +455,15 @@ class AudioEngine {
     this.setSurround(0);
   }
 
-  async renderOffline(buffer) {
-    const rate = buffer.sampleRate;
-    const offline = new OfflineAudioContext(2, Math.ceil(buffer.duration / this.state.tempo * rate) + rate, rate);
+  // opts.tempo / opts.rate override the live tempo and the buffer's rate (the converter renders at tempo 1 and at the chosen sample rate).
+  async renderOffline(buffer, opts = {}) {
+    const rate = opts.rate || buffer.sampleRate;
+    const tempo = opts.tempo || this.state.tempo;
+    const offline = new OfflineAudioContext(2, Math.ceil(buffer.duration / tempo * rate) + rate, rate);
 
     const src = offline.createBufferSource();
     src.buffer = buffer;
-    src.playbackRate.value = this.state.tempo;
+    src.playbackRate.value = tempo;
 
     if (!this.state.masterEnabled) {
       src.connect(offline.destination);
@@ -742,8 +744,18 @@ document.querySelectorAll('.tab-btn').forEach((btn) => {
     document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('active', b === btn));
     document.querySelectorAll('.tab-pane').forEach((p) => p.classList.toggle('active', p.id === `tab-${btn.dataset.tab}`));
     if (btn.dataset.tab === 'player') resizeCanvas();
+    if (btn.dataset.tab === 'converter') loadConverter();
   });
 });
+
+/* The converter (UI + helpers) is only fetched and run the first time its tab is opened. */
+let converterLoading = null;
+function loadConverter() {
+  if (converterLoading) return converterLoading;
+  const load = (src) => new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+  converterLoading = load('convlib.js').then(() => load('converter.js')).catch((e) => { converterLoading = null; throw e; });
+  return converterLoading;
+}
 
 els.btnTogglePlaylist.addEventListener('click', () => {
   els.playlistDrawer.classList.toggle('open');
@@ -2497,7 +2509,7 @@ btnInstallDeps.addEventListener('click', async () => {
   try {
     const result = await window.waveframe.installDeps();
     if (result.ok) await refreshDepsStatus();
-    else depsProgress.textContent = t('settings.depsError') + result.error;
+    else depsProgress.textContent = result.cancelled ? '' : t('settings.depsError') + result.error;
   } catch (err) {
     depsProgress.textContent = t('settings.depsError') + err.message;
   } finally {
@@ -2552,9 +2564,7 @@ window.waveframe?.setThumbbarIcons?.({
   }),
 });
 
-if (!localStorage.getItem('waveframe.tutorialSeen')) {
-  setTimeout(openTutorial, 400);
-}
+// First-run guidance is the welcome splash (main process, once per major.minor version); the old in-page tutorial is no longer auto-opened.
 
 
 /* ---- renderer self-test: `WAVEFRAME_SELFTEST=1 npm start` runs this inside the real Electron renderer and prints the result ---- */

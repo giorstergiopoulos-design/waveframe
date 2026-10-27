@@ -797,3 +797,21 @@ input[type=range] { accent-color: var(--accent); }
 /* header logo "receives" the welcome / family window when it shrinks into it */
 .brand-icon.brand-pop { animation: brandPop .6s cubic-bezier(.3, 1.6, .5, 1); }
 @keyframes brandPop { 0% { transform: scale(1); } 40% { transform: scale(1.3); box-shadow: 0 0 22px var(--accent); } 100% { transform: scale(1); } }
+
+/* ---- Converter tab ---- */
+.conv-drop { border: 1.5px dashed var(--panel-border); border-radius: 12px; padding: 26px; text-align: center; color: var(--text-dim); font-size: 13px; cursor: pointer; margin-bottom: 10px; }
+.conv-drop:hover, .conv-drop.over { border-color: var(--accent); color: var(--text); background: rgba(124,108,240,0.08); }
+.conv-list { display: grid; gap: 6px; margin-bottom: 10px; }
+.conv-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 4px 12px; padding: 8px 10px; background: var(--panel-solid); border: 1px solid var(--panel-border); border-radius: 9px; }
+.conv-name { font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.conv-state { font-size: 11.5px; color: var(--text-dim); }
+.conv-row.done .conv-state { color: var(--good); }
+.conv-row.failed .conv-state { color: var(--danger); }
+.conv-bar { grid-column: 1 / -1; height: 3px; background: var(--panel-border); border-radius: 2px; overflow: hidden; }
+.conv-bar-fill { height: 100%; width: 0; background: linear-gradient(to right, var(--accent-2), var(--accent-3)); }
+.conv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 0 14px; }
+.conv-field select, .conv-field input { width: 100%; background: var(--panel-solid); color: var(--text); border: 1px solid var(--panel-border); border-radius: 8px; padding: 7px 9px; font: inherit; font-size: 12.5px; }
+.conv-check { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 12.5px; flex-wrap: wrap; }
+.conv-inline { display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; color: var(--text-dim); }
+.conv-inline input { width: 64px; background: var(--panel-solid); color: var(--text); border: 1px solid var(--panel-border); border-radius: 6px; padding: 4px 6px; }
+#convCancel { margin-top: 12px; }

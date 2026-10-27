@@ -6,6 +6,8 @@ const https = require('https');
 const { execFile, spawn } = require('child_process');
 const AdmZip = require('adm-zip');
 const suite = require('./suite-main.js');
+const suiteLib = require('./suite.js');
+const converter = require('./conv-main.js');
 
 // Isolated profile for tests/self-test (never touches the real settings).
 if (process.env.WAVEFRAME_USER_DATA) app.setPath('userData', process.env.WAVEFRAME_USER_DATA);
@@ -15,7 +17,8 @@ const FALLBACK_FFMPEG = () => path.join(FALLBACK_DIR(), 'ffmpeg.exe');
 // LGPL build (not GPL): Waveframe only needs audio codecs (mp3/vorbis/opus/aac/wma/flac),
 // none of which require GPL-only components — this avoids GPL source-distribution
 // obligations entirely. See CLAUDE.md rule 11.
-const FFMPEG_DOWNLOAD_URL = 'https://github.com/BtbN/FFmpeg-Builds/releases/latest/download/ffmpeg-master-latest-win64-lgpl.zip';
+const FFMPEG_RELEASE_API = 'https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/tags/latest';
+const FFMPEG_ASSET_NAME = 'ffmpeg-master-latest-win64-lgpl.zip';
 
 const WINDOW_WIDTH = 1180;
 const WINDOW_HEIGHT = 760;
@@ -55,40 +58,40 @@ async function resolveFfmpegPath() {
   return null;
 }
 
-function downloadFile(url, destPath, onProgress, redirects = 0) {
-  return new Promise((resolve, reject) => {
-    if (redirects > 5) return reject(new Error('Too many redirects'));
-    https.get(url, { headers: { 'User-Agent': 'Waveframe' } }, (res) => {
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        res.resume();
-        downloadFile(res.headers.location, destPath, onProgress, redirects + 1).then(resolve, reject);
-        return;
-      }
-      if (res.statusCode !== 200) {
-        reject(new Error(`Download failed: HTTP ${res.statusCode}`));
-        return;
-      }
-      const total = parseInt(res.headers['content-length'] || '0', 10);
-      let received = 0;
-      const file = fs.createWriteStream(destPath);
-      res.on('data', (chunk) => {
-        received += chunk.length;
-        if (onProgress && total) onProgress(received / total);
-      });
-      res.pipe(file);
-      file.on('finish', () => file.close(() => resolve()));
-      file.on('error', reject);
-    }).on('error', reject);
-  });
+// Source, size and SHA-256 of the LGPL ffmpeg build, straight from the GitHub release (asset digest, or the release's checksums.sha256).
+async function getFfmpegAsset() {
+  const r = await suiteLib.httpGet(FFMPEG_RELEASE_API, { timeout: 8000, maxBytes: 4 * 1024 * 1024, hostOpts: { hosts: suiteLib.API_HOSTS } });
+  const rel = JSON.parse(r.body.toString('utf8'));
+  const assets = Array.isArray(rel.assets) ? rel.assets : [];
+  const asset = assets.find((a) => a && a.name === FFMPEG_ASSET_NAME);
+  if (!asset || !suiteLib.isAllowedUrl(asset.browser_download_url, suiteLib.DOWNLOAD_OPTS) || !new URL(asset.browser_download_url).pathname.startsWith('/BtbN/FFmpeg-Builds/')) throw new Error('ffmpeg asset not found');
+  let sha = suiteLib.digestSha256(asset);
+  if (!sha) {
+    const sums = assets.find((a) => a && a.name === 'checksums.sha256');
+    if (sums && suiteLib.isAllowedUrl(sums.browser_download_url, suiteLib.DOWNLOAD_OPTS)) {
+      const t = (await suiteLib.httpGet(sums.browser_download_url, { timeout: 8000, maxBytes: 256 * 1024 })).body.toString('utf8');
+      sha = suiteLib.parseChecksumText(t, FFMPEG_ASSET_NAME);
+    }
+  }
+  if (!sha) throw new Error('no checksum published');
+  return { url: asset.browser_download_url, size: Number(asset.size) || 0, sha256: sha, name: asset.name };
 }
 
-async function installFfmpeg(onProgress) {
+// confirm(info) -> Promise<boolean> shows the source/size/SHA-256 to the user first; nothing is downloaded without a yes.
+async function installFfmpeg(onProgress, confirm) {
+  const info = await getFfmpegAsset();
+  if (confirm && !(await confirm(info))) { const e = new Error('cancelled'); e.code = 'cancelled'; throw e; }
   const dir = FALLBACK_DIR();
   fs.mkdirSync(dir, { recursive: true });
   const zipPath = path.join(os.tmpdir(), `waveframe-ffmpeg-${Date.now()}.zip`);
 
   onProgress({ phase: 'download', pct: 0 });
-  await downloadFile(FFMPEG_DOWNLOAD_URL, zipPath, (pct) => onProgress({ phase: 'download', pct }));
+  try {
+    await suiteLib.downloadVerified(info.url, zipPath, { expectedSha256: info.sha256, expectedSize: info.size, maxBytes: 400 * 1024 * 1024, onProgress: (pct) => onProgress({ phase: 'download', pct }) });
+  } catch (e) {
+    if (e.code === 'sha-mismatch' || e.code === 'size-mismatch') throw new Error('Το αρχείο που κατέβηκε δεν ταιριάζει με το δημοσιευμένο SHA-256 και διαγράφηκε.');
+    throw e;
+  }
 
   onProgress({ phase: 'extract', pct: 0 });
   const zip = new AdmZip(zipPath);
@@ -101,6 +104,31 @@ async function installFfmpeg(onProgress) {
   const ok = await testFfmpeg(FALLBACK_FFMPEG());
   if (!ok) throw new Error('Η εγκατάσταση ολοκληρώθηκε αλλά το ffmpeg δεν εκτελείται σωστά.');
   return FALLBACK_FFMPEG();
+}
+
+const FFMPEG_MSG = {
+  el: (i) => ({ title: 'Λήψη FFmpeg', detail: `Το Waveframe χρειάζεται το FFmpeg (έκδοση LGPL) για MP3, FLAC, AAC, OGG, Opus, WMA και AIFF/ALAC.
+
+Πηγή: github.com/BtbN/FFmpeg-Builds
+Αρχείο: ${i.name}
+Μέγεθος: ${(i.size / 1048576).toFixed(0)} MB
+SHA-256: ${i.sha256.slice(0, 16)}…
+
+Το αρχείο ελέγχεται με το SHA-256 πριν χρησιμοποιηθεί.`, go: 'Λήψη', no: 'Άκυρο' }),
+  en: (i) => ({ title: 'Download FFmpeg', detail: `Waveframe needs FFmpeg (LGPL build) for MP3, FLAC, AAC, OGG, Opus, WMA and AIFF/ALAC.
+
+Source: github.com/BtbN/FFmpeg-Builds
+File: ${i.name}
+Size: ${(i.size / 1048576).toFixed(0)} MB
+SHA-256: ${i.sha256.slice(0, 16)}…
+
+The file is verified against its SHA-256 before it is used.`, go: 'Download', no: 'Cancel' }),
+};
+let uiLang = 'el';
+async function confirmFfmpegDownload(win, info) {
+  const t = (FFMPEG_MSG[uiLang] || FFMPEG_MSG.en)(info);
+  const r = await dialog.showMessageBox(win, { type: 'question', title: 'Waveframe', message: t.title, detail: t.detail, buttons: [t.go, t.no], defaultId: 0, cancelId: 1, noLink: true });
+  return r.response === 0;
 }
 
 let helpWindow = null;
@@ -167,6 +195,7 @@ function updateJumpList() {
 
 let mainWin = null;
 let suiteApi = null;
+let converterApi = null;
 
 function createWindow() {
   const savedState = loadWindowState();
@@ -212,6 +241,7 @@ function createWindow() {
         try {
           const results = await win.webContents.executeJavaScript('window.__selfTest()');
           results.push(...await suiteApi.selfTest());
+          results.push(...await converterApi.selfTest());
           for (const r of results) console.log(`${r.ok ? 'PASS' : 'FAIL'} ${r.name}${r.extra ? ' — ' + r.extra : ''}`);
           code = results.every((r) => r.ok) ? 0 : 1;
         } catch (e) { console.log('FAIL self-test could not run: ' + e); }
@@ -343,10 +373,10 @@ function createWindow() {
     try {
       const installedPath = await installFfmpeg((progress) => {
         win.webContents.send('deps:progress', progress);
-      });
+      }, (info) => confirmFfmpegDownload(win, info));
       return { ok: true, path: installedPath };
     } catch (err) {
-      return { ok: false, error: err.message };
+      return { ok: false, error: err.message, cancelled: err.code === 'cancelled' };
     }
   });
 
@@ -497,11 +527,13 @@ if (!gotSingleInstanceLock) {
 
   app.whenReady().then(() => {
     suiteApi = suite.init({
+      onLang: (l) => { uiLang = l; },
       getMainWin: () => mainWin,
       getTheme: () => currentTheme,
       isMini: () => !!mainWin && !mainWin.isDestroyed() && mainWin.getBounds().width < 700,
       isTrusted: (wc) => (!!mainWin && !mainWin.isDestroyed() && wc === mainWin.webContents) || (!!helpWindow && !helpWindow.isDestroyed() && wc === helpWindow.webContents),
     });
+    converterApi = converter.init({ getMainWin: () => mainWin, resolveFfmpegPath, installFfmpeg, confirmFfmpegDownload });
     createWindow();
     forwardJumpListAction(process.argv);
     mainWin.webContents.once('did-finish-load', () => forwardOpenFile(process.argv));
