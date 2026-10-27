@@ -1797,25 +1797,23 @@ const swAutostart = document.getElementById('swAutostart');
 wireSwitch(swAutostart, (on) => window.waveframe.setAutostart(on));
 window.waveframe.getAutostart().then((enabled) => swAutostart.classList.toggle('active', enabled));
 
-/* ---- manual update check (no auto-updater yet) ---- */
-// Leave empty until Waveframe has a public GitHub repository to check releases against.
-const WAVEFRAME_REPO = '';
+/* ---- new-version check: runs in the main process (GitHub latest release, once a day, ETag); nothing is installed automatically ---- */
+const swNotifyUpdates = document.getElementById('swNotifyUpdates');
+function pushSuiteSettings() {
+  window.waveframe.setSuiteSettings({ notify: swNotifyUpdates.classList.contains('active'), lang: localStorage.getItem('waveframe.lang') || 'el' });
+}
+wireSwitch(swNotifyUpdates, (on) => { localStorage.setItem('waveframe.notifyUpdates', on ? '1' : '0'); pushSuiteSettings(); });
+swNotifyUpdates.classList.toggle('active', localStorage.getItem('waveframe.notifyUpdates') !== '0');
+pushSuiteSettings();
+document.addEventListener('waveframe:language-changed', pushSuiteSettings);
 document.getElementById('btnCheckUpdates').addEventListener('click', async () => {
   const statusEl = document.getElementById('updateStatus');
-  if (!WAVEFRAME_REPO) {
-    statusEl.textContent = t('settings.updatesNotConfigured');
-    return;
-  }
   statusEl.textContent = t('settings.checkingUpdates');
   try {
-    const res = await fetch(`https://api.github.com/repos/${WAVEFRAME_REPO}/releases/latest`);
-    const data = await res.json();
-    const latest = (data.tag_name || '').replace(/^v/, '');
-    if (latest && latest !== window.waveframe.version) {
-      statusEl.textContent = `${t('settings.updateAvailable')} v${latest}`;
-    } else {
-      statusEl.textContent = t('settings.upToDate');
-    }
+    const res = await window.waveframe.checkUpdatesNow();
+    if (res.status === 'newer') statusEl.textContent = `${t('settings.updateAvailable')} v${res.version}`;
+    else if (res.status === 'current') statusEl.textContent = t('settings.upToDate');
+    else statusEl.textContent = t('settings.updateCheckFailed');
   } catch {
     statusEl.textContent = t('settings.updateCheckFailed');
   }
@@ -1981,7 +1979,8 @@ tutorialBack.addEventListener('click', () => {
   renderTutorial();
 });
 tutorialSkip.addEventListener('click', closeTutorial);
-els.btnShowTutorial.addEventListener('click', openTutorial);
+els.btnShowTutorial.addEventListener('click', () => window.waveframe.openWelcome());
+document.getElementById('btnOpenFamily').addEventListener('click', () => window.waveframe.openFamily());
 document.addEventListener('waveframe:language-changed', () => { if (tutorialOverlay.classList.contains('open')) renderTutorial(); });
 
 /* ---- Backup & Cloud Sync ---- */

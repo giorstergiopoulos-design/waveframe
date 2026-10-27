@@ -793,3 +793,7 @@ input[type=range] { accent-color: var(--accent); }
 }
 .input-modal-card .tutorial-nav { justify-content: flex-end; }
 .input-modal-card .tutorial-nav .export-btn { width: auto; padding: 10px 22px; }
+
+/* header logo "receives" the welcome / family window when it shrinks into it */
+.brand-icon.brand-pop { animation: brandPop .6s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes brandPop { 0% { transform: scale(1); } 40% { transform: scale(1.3); box-shadow: 0 0 22px var(--accent); } 100% { transform: scale(1); } }

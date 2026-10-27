@@ -5,6 +5,10 @@ const os = require('os');
 const https = require('https');
 const { execFile, spawn } = require('child_process');
 const AdmZip = require('adm-zip');
+const suite = require('./suite-main.js');
+
+// Isolated profile for tests/self-test (never touches the real settings).
+if (process.env.WAVEFRAME_USER_DATA) app.setPath('userData', process.env.WAVEFRAME_USER_DATA);
 
 const FALLBACK_DIR = () => path.join(app.getPath('userData'), 'bin');
 const FALLBACK_FFMPEG = () => path.join(FALLBACK_DIR(), 'ffmpeg.exe');
@@ -162,6 +166,7 @@ function updateJumpList() {
 }
 
 let mainWin = null;
+let suiteApi = null;
 
 function createWindow() {
   const savedState = loadWindowState();
@@ -206,6 +211,7 @@ function createWindow() {
         let code = 1;
         try {
           const results = await win.webContents.executeJavaScript('window.__selfTest()');
+          results.push(...await suiteApi.selfTest());
           for (const r of results) console.log(`${r.ok ? 'PASS' : 'FAIL'} ${r.name}${r.extra ? ' — ' + r.extra : ''}`);
           code = results.every((r) => r.ok) ? 0 : 1;
         } catch (e) { console.log('FAIL self-test could not run: ' + e); }
@@ -490,9 +496,16 @@ if (!gotSingleInstanceLock) {
   });
 
   app.whenReady().then(() => {
+    suiteApi = suite.init({
+      getMainWin: () => mainWin,
+      getTheme: () => currentTheme,
+      isMini: () => !!mainWin && !mainWin.isDestroyed() && mainWin.getBounds().width < 700,
+      isTrusted: (wc) => (!!mainWin && !mainWin.isDestroyed() && wc === mainWin.webContents) || (!!helpWindow && !helpWindow.isDestroyed() && wc === helpWindow.webContents),
+    });
     createWindow();
     forwardJumpListAction(process.argv);
     mainWin.webContents.once('did-finish-load', () => forwardOpenFile(process.argv));
+    if (process.env.WAVEFRAME_SELFTEST !== '1' && process.env.WAVEFRAME_NO_SPLASH !== '1') mainWin.webContents.once('did-finish-load', () => suiteApi.onMainLoaded());
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();

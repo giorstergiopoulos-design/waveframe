@@ -9,7 +9,7 @@
 </head>
 <body>
   <header class="help-header">
-    <h1>Waveframe <span id="helpVersion">v1.6.0</span></h1>
+    <h1>Waveframe <span id="helpVersion">v1.7.0</span></h1>
     <div class="help-tabs">
       <button class="help-tab active" data-tab="guide">Οδηγίες χρήσης</button>
       <button class="help-tab" data-tab="changelog">Ιστορικό εκδόσεων</button>
@@ -21,6 +21,7 @@
   <main class="help-body">
     <section id="help-guide" class="help-pane active">
       <h2>Καλώς ήρθες στο Waveframe</h2>
+      <p class="help-actions"><button class="help-btn" id="helpWelcome">▶ Οδηγός καλωσορίσματος</button> <button class="help-btn" id="helpFamily">Η οικογένεια Opsis</button></p>
       <p>Ένας επαγγελματικός ενισχυτής ήχου με πραγματικό Web Audio engine. Ο οδηγός αυτός καλύπτει όλες τις καρτέλες της εφαρμογής· τον ίδιο σύντομο, εικονογραφημένο οδηγό μπορείς να τον ξαναδείς όποτε θες από Ρυθμίσεις → Σχετικά → «Προβολή οδηγού».</p>
 
       <h2>Αναπαραγωγή</h2>
@@ -51,6 +52,14 @@
     </section>
 
     <section id="help-changelog" class="help-pane">
+      <div class="changelog-entry">
+        <div class="changelog-version">v1.7.0</div>
+        <ul>
+          <li>Οδηγός καλωσορίσματος (6 σελίδες) στην πρώτη εκκίνηση κάθε νέας έκδοσης major.minor, με κινούμενο εικονίδιο· κλείνει «μαζεύοντας» προς το λογότυπο του παραθύρου. Ξανανοίγει από Ρυθμίσεις → Σχετικά ή από αυτό το παράθυρο.</li>
+          <li>«Η οικογένεια Opsis»: παρουσίαση των εφαρμογών μου με δυνατότητες, κατάσταση εγκατάστασης και κουμπιά Άνοιγμα / Εγκατάσταση / Λεπτομέρειες. Η λήψη εγκαταστάτη γίνεται μόνο μετά από επιβεβαίωση και με έλεγχο SHA-256.</li>
+          <li>Ειδοποίηση για νέα έκδοση: έλεγχος του τελευταίου release στο GitHub μία φορά την ημέρα (με ETag), ειδοποίηση Windows μία φορά ανά έκδοση, διακόπτης στις Ρυθμίσεις· δεν γίνεται αυτόματη εγκατάσταση και δεν στέλνεται τίποτα προσωπικό.</li>
+        </ul>
+      </div>
       <div class="changelog-entry">
         <div class="changelog-version">v1.6.0</div>
         <ul>

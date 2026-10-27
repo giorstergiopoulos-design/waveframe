@@ -1,6 +1,6 @@
 'use strict';
 
-document.getElementById('helpVersion').textContent = `v${window.waveframe?.version || '1.6.0'}`;
+document.getElementById('helpVersion').textContent = `v${window.waveframe?.version || '1.7.0'}`;
 document.getElementById('licenseYear').textContent = String(new Date().getFullYear());
 
 window.waveframe?.onThemeSync?.((theme) => {
@@ -15,3 +15,6 @@ document.querySelectorAll('.help-tab').forEach((btn) => {
     });
   });
 });
+
+document.getElementById('helpWelcome').addEventListener('click', () => window.waveframe?.openWelcome?.());
+document.getElementById('helpFamily').addEventListener('click', () => window.waveframe?.openFamily?.());

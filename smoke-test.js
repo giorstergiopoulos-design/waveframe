@@ -11,6 +11,9 @@
 const { spawn, execFileSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
+// Isolated profile + no splash: a smoke run must never touch the real settings or mark the welcome guide as seen.
+const SMOKE_ENV = { ...process.env, WAVEFRAME_USER_DATA: fs.mkdtempSync(path.join(os.tmpdir(), 'wf-smoke-')), WAVEFRAME_NO_SPLASH: '1' };
 
 const ELECTRON_BIN = path.join(__dirname, 'node_modules', '.bin', process.platform === 'win32' ? 'electron.cmd' : 'electron');
 const LOG_FILE = path.join(__dirname, 'smoke-test.log');

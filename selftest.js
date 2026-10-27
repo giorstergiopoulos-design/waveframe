@@ -8,13 +8,15 @@
 const { spawn, execFileSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
+const USER_DATA = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-selftest-')); // isolated profile: never touches the real settings
 
 const ELECTRON_BIN = path.join(__dirname, 'node_modules', '.bin', process.platform === 'win32' ? 'electron.cmd' : 'electron');
 if (!fs.existsSync(ELECTRON_BIN)) { console.error('FAIL: Electron not installed (run npm install)'); process.exit(1); }
 
 const child = spawn(ELECTRON_BIN, ['.'], {
   cwd: __dirname,
-  env: { ...process.env, WAVEFRAME_SELFTEST: '1', ELECTRON_ENABLE_LOGGING: '0' },
+  env: { ...process.env, WAVEFRAME_SELFTEST: '1', WAVEFRAME_USER_DATA: USER_DATA, ELECTRON_ENABLE_LOGGING: '0' },
   shell: process.platform === 'win32',
   stdio: ['ignore', 'pipe', 'pipe'],
 });
@@ -31,6 +33,7 @@ const timeout = setTimeout(() => {
 
 child.on('exit', (code) => {
   clearTimeout(timeout);
+  try { fs.rmSync(USER_DATA, { recursive: true, force: true }); } catch (_) { /* still locked */ }
   const failed = /^FAIL/m.test(out) || code !== 0;
   console.log(failed ? 'SELF-TEST FAILED' : 'SELF-TEST PASSED');
   process.exit(failed ? 1 : 0);

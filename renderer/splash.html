@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:;" />
+<title>Waveframe</title>
+<link rel="stylesheet" href="splash.css" />
+<script src="theme-init.js"></script>
+</head>
+<body>
+  <div class="backdrop" id="backdrop"></div>
+  <div class="stage">
+    <section class="card" id="card" role="dialog" aria-modal="true" aria-labelledby="cardTitle">
+      <header class="hero">
+        <div class="logo" id="logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path class="bar b1" d="M2 10v3"/><path class="bar b2" d="M6 6v11"/><path class="bar b3" d="M10 3v18"/><path class="bar b4" d="M14 8v7"/><path class="bar b5" d="M18 5v13"/><path class="bar b6" d="M22 10v3"/>
+          </svg>
+        </div>
+        <div class="hero-text">
+          <h1 id="cardTitle">Waveframe</h1>
+          <div class="hero-sub" id="heroSub"></div>
+        </div>
+        <button class="x-btn" id="btnX" aria-label="Close">&#10005;</button>
+      </header>
+
+      <div class="body" id="welcomeBody">
+        <div class="pages" id="pages"></div>
+        <div class="dots" id="dots"></div>
+      </div>
+
+      <div class="body body-family dep-hidden" id="familyBody">
+        <p class="family-note" id="familyNote"></p>
+        <div class="grid" id="grid"></div>
+      </div>
+
+      <footer class="foot">
+        <label class="check" id="dontShowWrap"><input type="checkbox" id="dontShow" /> <span id="dontShowLabel"></span></label>
+        <span class="spacer"></span>
+        <button class="btn ghost" id="btnSkip"></button>
+        <button class="btn" id="btnBack"></button>
+        <button class="btn primary" id="btnNext"></button>
+      </footer>
+    </section>
+  </div>
+  <script src="i18n.js"></script>
+  <script src="splash.js"></script>
+</body>
+</html>

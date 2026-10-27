@@ -24,10 +24,11 @@
 | 🖥 Windows integration | SMTC (έλεγχος από lock screen/ακουστικά Bluetooth), taskbar thumbbar & jump list, συσχέτιση αρχείων ήχου, auto-launch on login, toast ειδοποιήσεις αλλαγής κομματιού |
 | ♿ Προσβασιμότητα | Πλήρης πλοήγηση με πληκτρολόγιο, ορατά focus rings, σεβασμός `prefers-reduced-motion` |
 | 🛡 Αξιοπιστία | Crash overlay με αρχείο καταγραφής αντί για σιωπηλή κατάρρευση, backup/restore ρυθμίσεων σε JSON (για συγχρονισμό μέσω OneDrive/Drive/Dropbox) |
+| 👋 Οδηγός & οικογένεια εφαρμογών | Οδηγός καλωσορίσματος 6 σελίδων σε κάθε νέα έκδοση (major.minor) που «μαζεύεται» στο λογότυπο, παρουσίαση «Η οικογένεια Opsis» με κατάσταση εγκατάστασης και λήψη εγκαταστάτη μόνο με επιβεβαίωση και έλεγχο SHA-256, ειδοποίηση για νέα έκδοση (μία φορά ανά έκδοση, με διακόπτη) |
 
 ### Εγκατάσταση
 
-Κατέβασε το τελευταίο `Waveframe-Setup-*.exe` από τα [Releases](../../releases) και εκτέλεσέ το — ο οδηγός εγκατάστασης υποστηρίζει επιλογή γλώσσας/φακέλου εγκατάστασης και δημιουργεί συντομεύσεις επιφάνειας εργασίας/μενού Έναρξης. Υπάρχει επίσης μια φορητή (portable) έκδοση `Waveframe-*.exe` που δεν απαιτεί εγκατάσταση.
+Κατέβασε το τελευταίο `Waveframe.Setup.*.exe` (Inno Setup, εγκατάσταση χωρίς δικαιώματα διαχειριστή) από τα [Releases](../../releases) και εκτέλεσέ το — ο οδηγός εγκατάστασης υποστηρίζει επιλογή γλώσσας/φακέλου εγκατάστασης και δημιουργεί συντομεύσεις επιφάνειας εργασίας/μενού Έναρξης. Υπάρχει επίσης μια φορητή (portable) έκδοση `Waveframe-*.exe` που δεν απαιτεί εγκατάσταση.
 
 Η εφαρμογή χρειάζεται ένα FFmpeg (LGPL build) για την εξαγωγή αρχείων· αν δεν υπάρχει ήδη στο σύστημα, το κατεβάζει μόνη της από τις Ρυθμίσεις → Dependencies με ένα κλικ.
 
@@ -37,7 +38,8 @@
 npm install
 npm start          # εκκίνηση σε dev mode
 npm run smoke-test # αυτοματοποιημένος έλεγχος εκκίνησης χωρίς σφάλματα
-npm run dist        # παράγει portable + NSIS installer (Windows x64) στο release/
+npm run dist        # παράγει portable + win-unpacked (Windows x64) στο release/
+# Inno Setup installer (απαιτεί Inno Setup 7): ISCC.exe /DMyAppVersion=1.7.0 installerWaveframe.iss
 ```
 
 ### Δομή αποθετηρίου
@@ -63,10 +65,11 @@ Waveframe is a free, real-time audio enhancer and media player for Windows 10/11
 | 🖥 Windows integration | SMTC (lock screen / Bluetooth headset controls), taskbar thumbbar & jump list, audio file associations, auto-launch on login, track-change toast notifications |
 | ♿ Accessibility | Full keyboard navigation, visible focus rings, respects `prefers-reduced-motion` |
 | 🛡 Reliability | Crash overlay with a log file instead of a silent failure, JSON backup/restore of all settings (for syncing via OneDrive/Drive/Dropbox) |
+| 👋 Guide & app family | 6-page welcome guide on every new major.minor version that shrinks into the header logo, “The Opsis family” showcase with install state and an installer download only after a confirmation and SHA-256 check, new-version notification (once per version, can be switched off) |
 
 ### Installation
 
-Download the latest `Waveframe-Setup-*.exe` from [Releases](../../releases) and run it — the installer wizard supports choosing a language/install folder and creates desktop/Start Menu shortcuts. A portable `Waveframe-*.exe` build that needs no installation is also provided.
+Download the latest `Waveframe.Setup.*.exe` (Inno Setup, per-user, no admin rights) from [Releases](../../releases) and run it — the installer wizard supports choosing a language/install folder and creates desktop/Start Menu shortcuts. A portable `Waveframe-*.exe` build that needs no installation is also provided.
 
 The app needs an FFmpeg (LGPL build) for exporting; if one isn't already on your system, it can download it itself from Settings → Dependencies with one click.
 
@@ -85,6 +88,12 @@ npm run dist        # produces a portable build + NSIS installer (Windows x64) i
 - `renderer/` — the app itself (vanilla JS/HTML/CSS, no framework): `app.js` (audio engine & UI), `i18n.js` (20 languages), `backgrounds.js` (10 animated backgrounds), `help.html` (built-in guide/changelog/license)
 - `build/` — per-language EULA files for the installer
 - `WAVEFRAME_ROADMAP.md` / `WAVEFRAME_QA_CHECKLIST.md` — phase-by-phase development history and QA checklist
+
+## Απόρρητο / Privacy
+
+**Ελληνικά:** Το Waveframe δεν στέλνει τηλεμετρία. Οι μόνες συνδέσεις στο διαδίκτυο είναι αιτήματα GET προς το GitHub: (1) έλεγχος του τελευταίου release (`api.github.com`, το πολύ μία φορά την ημέρα, με ETag), που απενεργοποιείται από Ρυθμίσεις → Ειδοποίηση για νέες εκδόσεις· (2) η λίστα εφαρμογών της οικογένειας (`raw.githubusercontent.com`, το πολύ μία φορά την ημέρα, με ενσωματωμένο αντίγραφο εφεδρείας) και τα releases των εφαρμογών όταν ανοίξεις το παράθυρο «Η οικογένεια Opsis»· (3) λήψη εγκαταστάτη μόνο αν το επιβεβαιώσεις. Η λήψη επαληθεύεται με SHA-256 και ποτέ δεν εκτελείται αυτόματα. Δεν γίνεται αυτόματη εγκατάσταση ενημερώσεων.
+
+**English:** Waveframe sends no telemetry. The only network requests are GETs to GitHub: (1) the latest-release check (`api.github.com`, at most once a day, using ETag), which you can switch off in Settings → Notify about new versions; (2) the app-family list (`raw.githubusercontent.com`, at most once a day, with a built-in fallback copy) and the apps' releases when you open “The Opsis family”; (3) an installer download only if you confirm it. Downloads are verified with SHA-256 and never run automatically. Updates are never installed automatically.
 
 ## Άδεια / License
 

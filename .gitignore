@@ -3,3 +3,4 @@ release/
 *.log
 smoke-test.log
 /*.exe
+installer/output/

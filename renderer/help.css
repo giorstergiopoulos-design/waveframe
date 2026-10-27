@@ -107,3 +107,7 @@ kbd {
   background-color: var(--panel-border); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box;
 }
 *::-webkit-scrollbar-thumb:hover { background-color: var(--accent); }
+
+.help-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.help-btn { font: inherit; padding: 7px 14px; border-radius: 9px; border: 1px solid var(--panel-border); background: transparent; color: var(--text); cursor: pointer; }
+.help-btn:hover { background: color-mix(in srgb, var(--accent) 18%, transparent); }
