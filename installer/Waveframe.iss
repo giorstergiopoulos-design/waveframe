@@ -4,7 +4,7 @@
 ; Greek.isl is the unofficial community translation from the Inno Setup repository (copied in Languages\ so the script compiles anywhere).
 
 #ifndef MyAppVersion
-  #define MyAppVersion "1.9.0"
+  #define MyAppVersion "1.9.1"
 #endif
 #define MyAppName "Waveframe"
 #define MyAppExeName "Waveframe.exe"

@@ -1,6 +1,6 @@
 'use strict';
 
-document.getElementById('helpVersion').textContent = `v${window.waveframe?.version || '1.9.0'}`;
+document.getElementById('helpVersion').textContent = `v${window.waveframe?.version || '1.9.1'}`;
 document.getElementById('licenseYear').textContent = String(new Date().getFullYear());
 
 window.waveframe?.onThemeSync?.((theme) => {

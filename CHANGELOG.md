@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.1
+- Translations: the Export/Convert, welcome guide, Opsis-family, notification and mini-player texts now exist in all 20 languages (were Greek/English only for 1.8-1.9). Coverage test: same keys and placeholders in every language, no English leftovers, no raw keys (test/i18n.test.js).
+- Repo hygiene: removed make_icon.js (unused, not referenced anywhere).
+- Bugs found and still open in 1.9.0 audit: 150 % DPI and RTL still not run on real hardware; spelling review of the 18 machine-translated languages still needs a native reviewer.
+
 ## 1.9.0
 - Export and Converter merged into one tab "Export / Convert" (playlist tracks + files, quality presets, all formats).
 - Encodes are saved to Music\WaveFrame by default (created automatically); another folder or "next to the original" can be chosen and is remembered.

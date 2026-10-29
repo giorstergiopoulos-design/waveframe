@@ -1,6 +1,6 @@
 {
   "name": "waveframe",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "description": "Waveframe - real-time audio enhancer and player",
   "main": "main.js",
   "author": "",

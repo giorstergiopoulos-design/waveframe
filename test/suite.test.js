@@ -228,3 +228,26 @@ test('httpGet: size cap (declared and streamed), 304, errors, redirect to a bad 
     await assert.rejects(S.httpGet('https://evil.example/', {}), { code: 'bad-host' });
   } finally { srv.close(); }
 });
+
+test('every app of the catalogue resolves to an embedded icon (waveframe draws its own); icons are real PNGs', () => {
+  const apps = S.validateCatalogue(embedded).apps;
+  for (const a of apps) {
+    if (a.id === 'waveframe') continue;
+    const f = path.join(__dirname, '..', 'renderer', 'appicons', `${a.id}.png`);
+    assert.ok(fs.existsSync(f), `missing icon for ${a.id}`);
+    const b = fs.readFileSync(f);
+    assert.equal(b.slice(1, 4).toString(), 'PNG', `${a.id} is not a PNG`);
+    assert.ok(b.readUInt32BE(16) >= 96 && b.readUInt32BE(20) >= 96, `${a.id} icon too small for 200 % DPI`);
+  }
+});
+
+test('install detection uses the uninstall names and paths of the catalogue (Opsis = "Opsis - Desktop Customization")', () => {
+  const apps = S.validateCatalogue(embedded).apps;
+  const opsis = apps.find((a) => a.id === 'opsis');
+  assert.equal(opsis.uninstallDisplayName, 'Opsis - Desktop Customization');
+  const env = { LocalAppData: 'C:\\Users\\u\\AppData\\Local', ProgramFiles: 'C:\\Program Files' };
+  const entries = [{ displayName: 'Opsis - Desktop Customization', displayVersion: '2.1.3' }];
+  assert.deepEqual(S.findInstalled(opsis, { entries, exists: () => false, env }).version, '2.1.3');
+  const byPath = S.findInstalled(opsis, { entries: [], exists: (p) => p === 'C:\\Program Files\\Opsis - Desktop Customization\\Opsis.exe', env });
+  assert.equal(byPath.installed, true);
+});

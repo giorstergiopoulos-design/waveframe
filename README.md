@@ -2,7 +2,7 @@
 
 # Waveframe
 
-**v1.9.0** · Windows 10/11 · MIT · [Releases](../../releases) · [The Opsis family](#η-οικογένεια-opsis--the-opsis-family)
+**v1.9.1** · Windows 10/11 · MIT · [Releases](../../releases) · [The Opsis family](#η-οικογένεια-opsis--the-opsis-family)
 
 <p align="center">
   <img src="docs/img/dark-player.png" alt="Player (dark)" width="48%" />
@@ -47,7 +47,7 @@
 
 #### Επαλήθευση λήψης (SHA-256)
 
-Κάθε αρχείο του release συνοδεύεται από αρχείο `.sha256`. Στο PowerShell: `(Get-FileHash .\Waveframe.Setup.1.9.0.exe -Algorithm SHA256).Hash` και σύγκρινε με το περιεχόμενο του `Waveframe.Setup.1.9.0.exe.sha256`. **Απαιτήσεις:** Windows 10/11 x64.
+Κάθε αρχείο του release συνοδεύεται από αρχείο `.sha256`. Στο PowerShell: `(Get-FileHash .\Waveframe.Setup.1.9.1.exe -Algorithm SHA256).Hash` και σύγκρινε με το περιεχόμενο του `Waveframe.Setup.1.9.1.exe.sha256`. **Απαιτήσεις:** Windows 10/11 x64.
 
 ### Χτίσιμο από τον πηγαίο κώδικα
 
@@ -92,7 +92,7 @@ The app needs an FFmpeg (LGPL build) for exporting; if one isn't already on your
 
 #### Verify your download (SHA-256)
 
-Every release file has a matching `.sha256` file. In PowerShell: `(Get-FileHash .\Waveframe.Setup.1.9.0.exe -Algorithm SHA256).Hash` and compare it with the contents of `Waveframe.Setup.1.9.0.exe.sha256`. **Requirements:** Windows 10/11 x64.
+Every release file has a matching `.sha256` file. In PowerShell: `(Get-FileHash .\Waveframe.Setup.1.9.1.exe -Algorithm SHA256).Hash` and compare it with the contents of `Waveframe.Setup.1.9.1.exe.sha256`. **Requirements:** Windows 10/11 x64.
 
 ### Building from source
 
