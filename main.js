@@ -117,6 +117,7 @@ async function confirmFfmpegDownload(win, info) {
 }
 
 let helpWindow = null;
+let helpLang = 'el'; // the app language, forwarded to the Help window for its changelog
 let currentTheme = 'midnight';
 
 function createHelpWindow(parent) {
@@ -135,7 +136,7 @@ function createHelpWindow(parent) {
   helpWindow.setMenuBarVisibility(false);
   helpWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   helpWindow.webContents.on('will-navigate', (e, url) => { if (!url.startsWith('file:')) e.preventDefault(); });
-  helpWindow.loadFile(path.join(__dirname, 'renderer', 'help.html'), { search: `theme=${encodeURIComponent(currentTheme)}` });
+  helpWindow.loadFile(path.join(__dirname, 'renderer', 'help.html'), { search: `theme=${encodeURIComponent(currentTheme)}&lang=${encodeURIComponent(helpLang)}` });
   helpWindow.on('closed', () => { helpWindow = null; });
 }
 
@@ -473,6 +474,7 @@ if (!gotSingleInstanceLock) {
 
   app.whenReady().then(() => {
     suiteApi = suite.init({
+      onLang: (l) => { helpLang = l; },
       getMainWin: () => mainWin,
       getTheme: () => currentTheme,
       isMini: () => !!mainWin && !mainWin.isDestroyed() && mainWin.getBounds().width < 700,

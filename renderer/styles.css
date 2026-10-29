@@ -836,3 +836,6 @@ body.mini-mode #bgCanvas { display: none; }
 .conv-panel #convStart { margin-top: 18px; }
 .conv-panel #convCancel { display: block; margin: 18px 0 0; }
 .conv-panel .progress-track { margin-top: 14px; }
+
+.conv-panel .conv-field select, .conv-panel .conv-field input { min-width: 0; }
+.conv-panel .conv-grid { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
