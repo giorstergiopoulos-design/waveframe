@@ -10,32 +10,19 @@ const { execFile } = require('child_process');
 const S = require('./suite.js');
 
 const DAY = 24 * 3600 * 1000;
-const MSG = {
-  el: {
-    balloonTitle: (v) => `Waveframe ${v} είναι διαθέσιμο`,
-    balloonBody: 'Πάτησε για να δεις τι νέο υπάρχει.',
-    dlTitle: 'Λήψη εγκαταστάτη',
-    dlDetail: (n, mb, host, sha) => `Αρχείο: ${n}\nΜέγεθος: ${mb} MB\nΠηγή: ${host} (GitHub)\nSHA-256: ${sha}…\n\nΤο αρχείο θα αποθηκευτεί στις Λήψεις και θα ελεγχθεί με το SHA-256. Δεν θα εκτελεστεί αυτόματα.`,
-    dlGo: 'Λήψη', dlPage: 'Σελίδα έκδοσης', dlCancel: 'Άκυρο',
-    dlBad: 'Η λήψη ακυρώθηκε: το αρχείο δεν ταιριάζει με το αναμενόμενο SHA-256 ή μέγεθος και διαγράφηκε.',
-    dlFail: 'Η λήψη απέτυχε. Δοκίμασε ξανά αργότερα.',
-  },
-  en: {
-    balloonTitle: (v) => `Waveframe ${v} is available`,
-    balloonBody: 'Click to see what\'s new.',
-    dlTitle: 'Download installer',
-    dlDetail: (n, mb, host, sha) => `File: ${n}\nSize: ${mb} MB\nSource: ${host} (GitHub)\nSHA-256: ${sha}…\n\nThe file is saved to Downloads and verified with its SHA-256. It is never run automatically.`,
-    dlGo: 'Download', dlPage: 'Release page', dlCancel: 'Cancel',
-    dlBad: 'Download cancelled: the file did not match the expected SHA-256 or size and was deleted.',
-    dlFail: 'The download failed. Try again later.',
-  },
-};
+// Every user-facing string of the main process (balloon, dialogs) comes from renderer/i18n.js: all 20 languages, English then Greek as fallback.
+const I18N = new Function('localStorage', 'document', fs.readFileSync(path.join(__dirname, 'renderer', 'i18n.js'), 'utf8') + ';return I18N;')({ getItem: () => null, setItem() {} }, {});
+function translate(lang, key, vars) {
+  let t = (I18N[lang] && I18N[lang][key]) || I18N.en[key] || I18N.el[key] || key;
+  for (const [k, v] of Object.entries(vars || {})) t = t.split(`{${k}}`).join(String(v));
+  return t;
+}
 
 function init({ getMainWin, getTheme, isMini, isTrusted, onLang }) {
   const userData = () => app.getPath('userData');
   const store = S.createStore(path.join(userData(), 'suite-state.json'), S.STATE_DEFAULTS, S.sanitizeState);
   let lang = 'el';
-  const m = () => MSG[lang] || MSG.en;
+  const tx = (key, vars) => translate(lang, key, vars);
 
   /* ---------- catalogue: embedded fallback + daily cached refresh ---------- */
   const CAT_CACHE = () => path.join(userData(), 'suite-catalogue.json');
@@ -79,22 +66,50 @@ function init({ getMainWin, getTheme, isMini, isTrusted, onLang }) {
     }
   }
 
-  /* ---------- new-version balloon ---------- */
-  let balloon = null;
+  /* ---------- new-version balloon + update window (same flow as the Opsis News Crawler) ---------- */
+  // Balloon (once per version, never while a full-screen app is in front) -> click opens the update window with:
+  // Download and install | Later | Skip this version | What's new. The download is verified with SHA-256 and installed silently.
+  let balloon = null, pendingRelease = null, installing = false, retryTimer = null;
+  const isPortable = () => !!process.env.PORTABLE_EXECUTABLE_DIR;
+
+  function isFullscreenBusy() {
+    return new Promise((resolve) => {
+      execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-WindowStyle', 'Hidden', '-Command', S.FULLSCREEN_PS], { windowsHide: true, timeout: 8000 }, (err, out) => resolve(!err && S.isBusyNotificationState(parseInt(String(out).trim(), 10))));
+    });
+  }
+
   function showBalloon(rel) {
     if (!Notification.isSupported()) return false;
-    balloon = new Notification({ title: m().balloonTitle(`v${rel.version}`), body: m().balloonBody });
-    balloon.on('click', () => { if (S.isRepoPageUrl(rel.url, S.SELF_REPO)) shell.openExternal(rel.url); });
+    balloon = new Notification({ title: tx('upd.balloonTitle', { v: rel.version }), body: tx('upd.balloonBody') });
+    balloon.on('click', () => openUpdateWindow(rel));
     balloon.show();
     return true;
   }
+
+  async function openUpdateWindow(rel) {
+    pendingRelease = rel;
+    const main = getMainWin();
+    if (!main || main.isDestroyed()) return;
+    if (main.isMinimized()) main.restore();
+    main.show(); main.focus();
+    // in the compact mini player there is no room for the window: go straight to the release page
+    if (isMini() || !(await openSplash('update'))) { if (S.isRepoPageUrl(rel.url, S.SELF_REPO)) shell.openExternal(rel.url); }
+  }
+
   async function checkForUpdate({ manual }) {
     const rel = await getRelease(S.SELF_REPO);
     store.set({ lastCheck: Date.now() });
     if (!rel) return { status: 'error' };
     if (!S.isNewer(rel.tag, app.getVersion())) return { status: 'current', version: rel.version };
-    if (manual || S.shouldNotify(store.get(), rel.tag, app.getVersion())) {
-      if (showBalloon(rel)) store.set({ notifiedVersion: rel.version });
+    if (manual) {
+      store.set({ skippedVersion: '' }); // asking explicitly always shows the update
+      openUpdateWindow(rel);
+    } else if (S.shouldNotify(store.get(), rel.tag, app.getVersion())) {
+      if (await isFullscreenBusy()) { // a game / presentation is in front: ask again in 15 minutes
+        clearTimeout(retryTimer);
+        retryTimer = setTimeout(() => checkForUpdate({ manual: false }).catch(() => {}), 15 * 60 * 1000);
+        retryTimer.unref();
+      } else if (showBalloon(rel)) store.set({ notifiedVersion: rel.version });
     }
     return { status: 'newer', version: rel.version, url: rel.url };
   }
@@ -102,6 +117,49 @@ function init({ getMainWin, getTheme, isMini, isTrusted, onLang }) {
     const run = () => { if (store.get().notifyEnabled) checkForUpdate({ manual: false }).catch(() => {}); };
     setTimeout(run, 30000).unref();
     setInterval(run, DAY).unref();
+  }
+
+  async function installUpdateForTest() { const open = shell.openExternal; shell.openExternal = () => {}; try { return await installUpdate(); } finally { shell.openExternal = open; } }
+
+  async function installUpdate() {
+    const rel = pendingRelease;
+    if (!rel || installing) return { status: 'busy' };
+    const selfApp = embeddedCatalogue().apps.find((a) => a.id === 'waveframe');
+    const asset = S.pickInstaller(rel, selfApp);
+    let sha = asset && S.digestSha256(asset);
+    if (asset && !sha) {
+      const ck = S.findChecksumAsset(rel, asset.name);
+      if (ck && S.isTrustedReleaseDownload(ck.url, S.SELF_REPO)) { try { sha = S.parseChecksumText((await S.httpGet(ck.url, { timeout: 8000, maxBytes: 4096 })).body.toString('utf8'), asset.name); } catch (_) { /* no digest */ } }
+    }
+    // nothing to verify against, a portable copy, or a foreign URL: never run anything - the release page opens instead
+    if (!asset || !sha || isPortable() || !S.isTrustedReleaseDownload(asset.url, S.SELF_REPO) || !/\.exe$/i.test(asset.name)) {
+      if (S.isRepoPageUrl(rel.url, S.SELF_REPO)) shell.openExternal(rel.url);
+      return { status: 'page', reason: !sha ? 'no-digest' : 'manual' };
+    }
+    const choice = await dialog.showMessageBox(splash && !splash.isDestroyed() ? splash : getMainWin(), {
+      type: 'question', title: tx('upd.confirmTitle'), message: tx('upd.confirm', { v: rel.version }), buttons: [tx('dl.go'), tx('dl.cancel')], defaultId: 0, cancelId: 1, noLink: true,
+    });
+    if (choice.response !== 0) return { status: 'cancelled' };
+    installing = true;
+    try {
+      const dir = path.join(app.getPath('userData'), 'update');
+      fs.mkdirSync(dir, { recursive: true });
+      for (const f of fs.readdirSync(dir)) { try { fs.unlinkSync(path.join(dir, f)); } catch (_) { /* in use */ } }
+      const file = path.join(dir, path.basename(asset.name).replace(/[<>:"/\\|?*\x00-\x1F]/g, '_'));
+      let last = -1;
+      await S.downloadVerified(asset.url, file, {
+        expectedSha256: sha, expectedSize: asset.size, maxBytes: 200 * 1024 * 1024,
+        onProgress: (p) => { const n = Math.floor(p * 100); if (n !== last && splash && !splash.isDestroyed()) { last = n; splash.webContents.send('update:progress', { pct: n }); } },
+      });
+      const script = S.buildUpdateScript({ pid: process.pid, setupPath: file, sha256: sha, exePaths: [path.join(process.env.ProgramFiles || 'C:\\Program Files', 'Waveframe', 'Waveframe.exe'), process.execPath] });
+      const helper = require('child_process').spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-Command', script], { detached: true, stdio: 'ignore', windowsHide: true });
+      helper.unref();
+      setTimeout(() => app.quit(), 600);
+      return { status: 'installing' };
+    } catch (err) {
+      const bad = err && (err.code === 'sha-mismatch' || err.code === 'size-mismatch');
+      return { status: 'failed', message: bad ? tx('upd.verifyFailed') : tx('upd.failed', { why: String(err && err.message || err).slice(0, 120) }) };
+    } finally { installing = false; }
   }
 
   /* ---------- splash windows ---------- */
@@ -122,6 +180,7 @@ function init({ getMainWin, getTheme, isMini, isTrusted, onLang }) {
     chainFamily = auto && kind === 'welcome' && !store.get().familyOffered;
     if (kind === 'welcome') store.set({ welcomeSeen: S.majorMinor(app.getVersion()) });
     if (kind === 'family') store.set({ familyOffered: true });
+    if (kind === 'update' && !pendingRelease) return false;
     const win = new BrowserWindow({
       ...main.getContentBounds(), parent: main, show: false, frame: false, transparent: true, hasShadow: false,
       resizable: false, movable: false, minimizable: false, maximizable: false, fullscreenable: false, skipTaskbar: true,
@@ -154,6 +213,7 @@ function init({ getMainWin, getTheme, isMini, isTrusted, onLang }) {
       slow: Number(process.env.WAVEFRAME_SPLASH_SLOW) || 1,
       target: main ? await brandRect(main) : null,
       dontShow: store.get().welcomeOptOut,
+      update: splashKind === 'update' && pendingRelease ? { version: pendingRelease.version, current: app.getVersion(), notes: pendingRelease.notes || '', portable: isPortable() } : null,
     };
   });
 
@@ -174,6 +234,15 @@ function init({ getMainWin, getTheme, isMini, isTrusted, onLang }) {
     if (kind === 'welcome' && chain) setTimeout(() => openSplash('family'), 250);
   }
   ipcMain.on('splash:done', (e) => { if (fromSplash(e)) finishSplash(); });
+
+  // update window actions (only from the splash window that shows the update)
+  ipcMain.handle('update:install', async (e) => (fromSplash(e) && splashKind === 'update' ? installUpdate() : { status: 'error' }));
+  ipcMain.handle('update:skip', (e) => { if (!fromSplash(e) || !pendingRelease) return false; store.set({ skippedVersion: pendingRelease.version }); return true; });
+  ipcMain.handle('update:whatsnew', (e) => {
+    if (!fromSplash(e) || !pendingRelease || !S.isRepoPageUrl(pendingRelease.url, S.SELF_REPO)) return false;
+    shell.openExternal(pendingRelease.url);
+    return true;
+  });
 
   /* ---------- family showcase data ---------- */
   function readUninstallEntries() {
@@ -252,8 +321,8 @@ function init({ getMainWin, getTheme, isMini, isTrusted, onLang }) {
     const safeName = path.basename(asset.name).replace(/[<>:"/\\|?*\x00-\x1F]/g, '_');
     const mb = (asset.size / 1048576).toFixed(1);
     const choice = await dialog.showMessageBox(splash && !splash.isDestroyed() ? splash : getMainWin(), {
-      type: 'question', title: 'Waveframe', message: m().dlTitle, detail: m().dlDetail(safeName, mb, new URL(asset.url).hostname, sha.slice(0, 16)),
-      buttons: [m().dlGo, m().dlPage, m().dlCancel], defaultId: 0, cancelId: 2, noLink: true,
+      type: 'question', title: 'Waveframe', message: tx('dl.title'), detail: tx('dl.detail', { name: safeName, mb, host: new URL(asset.url).hostname, sha: sha.slice(0, 16) }),
+      buttons: [tx('dl.go'), tx('dl.page'), tx('dl.cancel')], defaultId: 0, cancelId: 2, noLink: true,
     });
     if (choice.response === 1) return page();
     if (choice.response !== 0) return { status: 'cancelled' };
@@ -271,7 +340,7 @@ function init({ getMainWin, getTheme, isMini, isTrusted, onLang }) {
       return { status: 'downloaded', path: dest };
     } catch (err) {
       const bad = err && (err.code === 'sha-mismatch' || err.code === 'size-mismatch');
-      dialog.showMessageBox(splash && !splash.isDestroyed() ? splash : getMainWin(), { type: bad ? 'error' : 'warning', title: 'Waveframe', message: bad ? m().dlBad : m().dlFail, buttons: ['OK'] });
+      dialog.showMessageBox(splash && !splash.isDestroyed() ? splash : getMainWin(), { type: bad ? 'error' : 'warning', title: 'Waveframe', message: bad ? tx('dl.bad') : tx('dl.fail'), buttons: ['OK'] });
       return { status: 'failed', code: err && err.code };
     } finally { downloading = false; }
   });
@@ -290,7 +359,7 @@ function init({ getMainWin, getTheme, isMini, isTrusted, onLang }) {
     if (!isTrusted(e.sender)) return { status: 'error' };
     return checkForUpdate({ manual: true });
   });
-  ipcMain.on('suite:get-notify-sync', (e) => { e.returnValue = store.get().notifyEnabled; });
+  ipcMain.on('suite:get-notify-sync', (e) => { e.returnValue = isTrusted(e.sender) ? store.get().notifyEnabled : true; });
 
   /* ---------- startup hooks ---------- */
   function onMainLoaded() {
@@ -331,11 +400,27 @@ function init({ getMainWin, getTheme, isMini, isTrusted, onLang }) {
       const closed2 = new Promise((r) => splash.once('closed', () => r(true)));
       splash.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' });
       check('Escape closes the family window', await Promise.race([closed2, wait(4000).then(() => false)]));
+      // the update window (Download and install | Later | Skip this version | What's new) with a fake newer release
+      await wait(400);
+      pendingRelease = { tag: 'v99.0.0', version: '99.0.0', url: 'https://github.com/' + S.OWNER + '/waveframe/releases/tag/v99.0.0', assets: [], notes: 'Self-test release notes' };
+      await openSplash('update');
+      check('update window opens with notes and the four actions', await waitFor(async () => (await js('document.getElementById("updNotes").textContent')) === 'Self-test release notes'));
+      const labels = await js('["btnNext","btnSkip","btnSkipVer","btnBack"].map((id) => document.getElementById(id).textContent)');
+      check('update buttons are localised (no raw keys)', labels.join('|') === [tx('upd.install'), tx('upd.later'), tx('upd.skip'), tx('upd.notes')].join('|'), labels.join(' | '));
+      if (process.env.WAVEFRAME_SELFTEST_SHOTS) { await wait(700); fs.writeFileSync(path.join(process.env.WAVEFRAME_SELFTEST_SHOTS, 'update-window.png'), (await splash.webContents.capturePage()).toPNG()); }
+      check('update title and lead mention the versions', (await js('document.getElementById("updLead").textContent')).includes('99.0.0'));
+      // with no installer asset the install button must never run anything: it falls back to the release page (not opened in the test)
+      const noAsset = await installUpdateForTest();
+      check('install without a verifiable installer only offers the release page', noAsset && noAsset.status === 'page', JSON.stringify(noAsset));
+      const closed3 = new Promise((r) => splash.once('closed', () => r(true)));
+      splash.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Escape' });
+      check('Escape closes the update window', await Promise.race([closed3, wait(4000).then(() => false)]));
+      pendingRelease = null;
     } catch (e) { check('splash self-test threw', false, e && e.stack || e); }
     return out;
   }
 
-  return { onMainLoaded, openSplash, selfTest };
+  return { onMainLoaded, openSplash, selfTest, tx };
 }
 
 module.exports = { init };

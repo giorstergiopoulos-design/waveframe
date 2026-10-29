@@ -22,6 +22,7 @@
   const slow = init.slow > 0 && init.slow <= 20 ? init.slow : 1;
   const dur = (ms) => (reduced ? 140 : ms) * slow;
   const isFamily = init.kind === 'family';
+  const isUpdate = init.kind === 'update' && !!init.update;
   document.body.classList.add(isFamily ? 'family' : 'welcome');
 
   const card = $('card');
@@ -175,16 +176,58 @@
     api.releases().then((rels) => { if (rels) for (const [id, rel] of Object.entries(rels)) { const c = cards.get(id); if (c) renderCard(c.a, rel); } }).catch(() => {});
   }
 
+  /* ---------- update window ---------- */
+  let installing = false;
+  function buildUpdate() {
+    const u = init.update;
+    $('cardTitle').textContent = tr('upd.title');
+    $('heroSub').textContent = `v${u.current} → v${u.version}`;
+    card.setAttribute('aria-label', tr('upd.title'));
+    $('welcomeBody').classList.add('dep-hidden');
+    $('updateBody').classList.remove('dep-hidden');
+    $('updLead').textContent = tr('upd.lead', { v: u.version, cur: u.current });
+    $('updNotesTitle').textContent = tr('upd.notes');
+    $('updNotes').textContent = u.notes || '';
+    $('updNotes').classList.toggle('dep-hidden', !u.notes);
+    $('updNotesTitle').classList.toggle('dep-hidden', !u.notes);
+    for (const id of ['dontShowWrap', 'btnBack']) $(id).classList.add('dep-hidden');
+    $('btnSkipVer').classList.remove('dep-hidden');
+    $('btnSkipVer').textContent = tr('upd.skip');
+    $('btnSkip').textContent = tr('upd.later');
+    $('btnNext').textContent = tr('upd.install');
+    $('btnBack').classList.remove('dep-hidden');
+    $('btnBack').textContent = tr('upd.notes');
+    $('btnBack').style.visibility = 'visible';
+    api.onUpdateProgress((p) => { $('updTrack').classList.remove('dep-hidden'); $('updFill').style.width = `${p.pct}%`; $('updStatus').textContent = tr('upd.downloading', { n: p.pct }); });
+    $('btnBack').addEventListener('click', () => api.whatsNew());
+    $('btnSkipVer').addEventListener('click', async () => { await api.skipUpdate(); collapse(false); });
+    $('btnNext').addEventListener('click', async () => {
+      if (installing) return;
+      installing = true;
+      for (const id of ['btnNext', 'btnSkip', 'btnSkipVer']) $(id).disabled = true;
+      $('updStatus').textContent = tr('splash.checking');
+      let r;
+      try { r = await api.installUpdate(); } catch (_) { r = { status: 'failed', message: tr('upd.failed', { why: '?' }) }; }
+      installing = false;
+      if (r.status === 'installing') { $('updStatus').textContent = tr('upd.starting'); return; }
+      for (const id of ['btnNext', 'btnSkip', 'btnSkipVer']) $(id).disabled = false;
+      $('updTrack').classList.add('dep-hidden');
+      $('updStatus').textContent = r.status === 'failed' ? r.message : r.status === 'page' ? tr('upd.noDigest') : '';
+    });
+  }
+
   /* ---------- wiring ---------- */
-  const closeNow = () => collapse(isFamily ? false : $('dontShow').checked);
+  const closeNow = () => { if (!installing) collapse(isFamily || isUpdate ? false : $('dontShow').checked); };
   $('btnX').addEventListener('click', closeNow);
   $('btnSkip').addEventListener('click', closeNow);
-  $('btnNext').addEventListener('click', () => { if (isFamily || page === PAGES - 1) closeNow(); else showPage(page + 1); });
-  $('btnBack').addEventListener('click', () => showPage(page - 1));
+  if (!isUpdate) {
+    $('btnNext').addEventListener('click', () => { if (isFamily || page === PAGES - 1) closeNow(); else showPage(page + 1); });
+    $('btnBack').addEventListener('click', () => showPage(page - 1));
+  }
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { e.preventDefault(); closeNow(); }
-    else if (!isFamily && e.key === 'ArrowRight') { e.preventDefault(); if (page < PAGES - 1) showPage(page + 1); }
-    else if (!isFamily && e.key === 'ArrowLeft') { e.preventDefault(); showPage(page - 1); }
+    else if (!isFamily && !isUpdate && e.key === 'ArrowRight') { e.preventDefault(); if (page < PAGES - 1) showPage(page + 1); }
+    else if (!isFamily && !isUpdate && e.key === 'ArrowLeft') { e.preventDefault(); showPage(page - 1); }
     else if (e.key === 'Tab') { // keep focus inside the dialog
       const f = [...card.querySelectorAll('button, input')].filter((x) => x.offsetParent !== null && !x.disabled && x.style.visibility !== 'hidden');
       if (!f.length) return;
@@ -195,6 +238,6 @@
   });
   $('btnX').setAttribute('aria-label', tr('splash.close'));
 
-  if (isFamily) await buildFamily(); else buildWelcome();
+  if (isUpdate) buildUpdate(); else if (isFamily) await buildFamily(); else buildWelcome();
   requestAnimationFrame(() => { enter(); $('btnNext').focus(); });
 })();

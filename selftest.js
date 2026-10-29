@@ -26,10 +26,10 @@ child.stdout.on('data', (d) => { const s = d.toString(); out += s; process.stdou
 child.stderr.on('data', () => { /* Chromium noise */ });
 
 const timeout = setTimeout(() => {
-  console.error('FAIL: self-test timed out after 60 s');
+  console.error('FAIL: self-test timed out after 240 s');
   try { if (process.platform === 'win32') execFileSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore' }); else child.kill('SIGKILL'); } catch (_) { /* already gone */ }
   process.exit(1);
-}, 60000);
+}, 240000);
 
 child.on('exit', (code) => {
   clearTimeout(timeout);

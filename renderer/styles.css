@@ -823,3 +823,16 @@ body.mini-mode #bgCanvas { display: none; }
 .mini-vis { position: absolute; inset: 0; z-index: 0; opacity: 0.55; pointer-events: none; overflow: hidden; }
 .mini-vis #visualizer { width: 100%; height: 100%; display: block; }
 .mini-bar > :not(.mini-vis) { position: relative; z-index: 1; }
+
+/* Export / Convert: every group of controls has its own spacing, so rows of buttons never touch or stack on each other */
+.conv-panel .settings-btn-row { display: flex; flex-wrap: wrap; gap: 8px 10px; margin: 0 0 14px; }
+.conv-panel .conv-presets { display: flex; flex-wrap: wrap; gap: 8px 10px; margin: 0 0 16px; }
+.conv-panel .conv-list { margin-bottom: 12px; }
+.conv-panel .conv-row { min-height: 40px; }
+.conv-panel .conv-row .small-btn { white-space: nowrap; }
+.conv-panel .small-btn { margin: 0; }
+.conv-panel .dest-row { margin: 4px 0 14px; }
+.conv-panel .conv-check { margin-top: 14px; }
+.conv-panel #convStart { margin-top: 18px; }
+.conv-panel #convCancel { display: block; margin: 18px 0 0; }
+.conv-panel .progress-track { margin-top: 14px; }

@@ -106,28 +106,13 @@ async function installFfmpeg(onProgress, confirm) {
   return FALLBACK_FFMPEG();
 }
 
-const FFMPEG_MSG = {
-  el: (i) => ({ title: 'Λήψη FFmpeg', detail: `Το Waveframe χρειάζεται το FFmpeg (έκδοση LGPL) για MP3, FLAC, AAC, OGG, Opus, WMA και AIFF/ALAC.
-
-Πηγή: github.com/BtbN/FFmpeg-Builds
-Αρχείο: ${i.name}
-Μέγεθος: ${(i.size / 1048576).toFixed(0)} MB
-SHA-256: ${i.sha256.slice(0, 16)}…
-
-Το αρχείο ελέγχεται με το SHA-256 πριν χρησιμοποιηθεί.`, go: 'Λήψη', no: 'Άκυρο' }),
-  en: (i) => ({ title: 'Download FFmpeg', detail: `Waveframe needs FFmpeg (LGPL build) for MP3, FLAC, AAC, OGG, Opus, WMA and AIFF/ALAC.
-
-Source: github.com/BtbN/FFmpeg-Builds
-File: ${i.name}
-Size: ${(i.size / 1048576).toFixed(0)} MB
-SHA-256: ${i.sha256.slice(0, 16)}…
-
-The file is verified against its SHA-256 before it is used.`, go: 'Download', no: 'Cancel' }),
-};
-let uiLang = 'el';
 async function confirmFfmpegDownload(win, info) {
-  const t = (FFMPEG_MSG[uiLang] || FFMPEG_MSG.en)(info);
-  const r = await dialog.showMessageBox(win, { type: 'question', title: 'Waveframe', message: t.title, detail: t.detail, buttons: [t.go, t.no], defaultId: 0, cancelId: 1, noLink: true });
+  const tx = (k, v) => suiteApi.tx(k, v);
+  const r = await dialog.showMessageBox(win, {
+    type: 'question', title: 'Waveframe', message: tx('ff.title'),
+    detail: tx('ff.detail', { name: info.name, mb: (info.size / 1048576).toFixed(0), sha: info.sha256.slice(0, 16) }),
+    buttons: [tx('ff.go'), tx('ff.no')], defaultId: 0, cancelId: 1, noLink: true,
+  });
   return r.response === 0;
 }
 
@@ -148,6 +133,8 @@ function createHelpWindow(parent) {
     },
   });
   helpWindow.setMenuBarVisibility(false);
+  helpWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  helpWindow.webContents.on('will-navigate', (e, url) => { if (!url.startsWith('file:')) e.preventDefault(); });
   helpWindow.loadFile(path.join(__dirname, 'renderer', 'help.html'), { search: `theme=${encodeURIComponent(currentTheme)}` });
   helpWindow.on('closed', () => { helpWindow = null; });
 }
@@ -289,7 +276,14 @@ function createWindow() {
     ]);
   }
 
+  // IPC hardening: every channel is answered only to the main window (or, for the two read-only constants, the Help window)
+  // and every argument is type-checked and size-limited here - the renderer is not trusted.
+  const fromMain = (e) => e.sender === win.webContents;
+  const fromApp = (e) => fromMain(e) || (!!helpWindow && !helpWindow.isDestroyed() && e.sender === helpWindow.webContents);
+  const PNG_DATA_URL = /^data:image\/png;base64,[A-Za-z0-9+/=]{1,200000}$/;
+
   ipcMain.on('thumbbar:icons', (event, icons) => {
+    if (!fromMain(event) || !icons || !['prev', 'play', 'pause', 'next'].every((k) => typeof icons[k] === 'string' && PNG_DATA_URL.test(icons[k]))) return;
     thumbbarIcons = {
       prev: nativeImage.createFromDataURL(icons.prev),
       play: nativeImage.createFromDataURL(icons.play),
@@ -301,23 +295,30 @@ function createWindow() {
 
   let lastNotifiedTitle = null;
   let trackNotificationsEnabled = true;
-  ipcMain.on('settings:track-notifications', (event, enabled) => { trackNotificationsEnabled = !!enabled; });
+  ipcMain.on('settings:track-notifications', (event, enabled) => { if (fromMain(event) && typeof enabled === 'boolean') trackNotificationsEnabled = enabled; });
 
   ipcMain.on('crash:log', (event, details) => {
+    if (!fromMain(event) || typeof details !== 'string') return;
     try {
       const logPath = path.join(app.getPath('userData'), 'crash.log');
-      const line = `[${new Date().toISOString()}] ${details}\n`;
+      // bounded: one entry is at most 4000 characters and the log restarts when it passes 512 KB
+      try { if (fs.statSync(logPath).size > 512 * 1024) fs.renameSync(logPath, logPath + '.old'); } catch { /* no log yet */ }
+      const line = `[${new Date().toISOString()}] ${details.slice(0, 4000)}\n`;
       fs.appendFileSync(logPath, line);
     } catch { /* best-effort — never let logging itself crash the app */ }
   });
-  ipcMain.handle('crash:get-log-path', () => path.join(app.getPath('userData'), 'crash.log'));
+  ipcMain.handle('crash:get-log-path', (e) => (fromMain(e) ? path.join(app.getPath('userData'), 'crash.log') : null));
 
-  ipcMain.handle('autostart:get', () => app.getLoginItemSettings().openAtLogin);
+  ipcMain.handle('autostart:get', (e) => (fromMain(e) ? app.getLoginItemSettings().openAtLogin : false));
   ipcMain.on('autostart:set', (event, enabled) => {
+    if (!fromMain(event) || typeof enabled !== 'boolean') return;
     app.setLoginItemSettings({ openAtLogin: enabled, path: process.execPath });
   });
-  ipcMain.on('now-playing:update', (event, { title, playing }) => {
-    isPlaying = !!playing;
+  ipcMain.on('now-playing:update', (event, payload) => {
+    if (!fromMain(event) || !payload || typeof payload !== 'object') return;
+    const playing = payload.playing === true;
+    const title = typeof payload.title === 'string' ? payload.title.slice(0, 300) : '';
+    isPlaying = playing;
     win.setTitle(title ? `${title} — Waveframe` : 'Waveframe');
     updateThumbbar();
     if (playing && title && title !== lastNotifiedTitle && trackNotificationsEnabled && Notification.isSupported()) {
@@ -328,19 +329,22 @@ function createWindow() {
   });
 
   ipcMain.on('theme:changed', (event, theme) => {
+    if (!fromMain(event) || typeof theme !== 'string' || !/^[a-z0-9-]{1,30}$/.test(theme)) return;
     currentTheme = theme;
     if (helpWindow && !helpWindow.isDestroyed()) {
       helpWindow.webContents.send('theme:sync', theme);
     }
   });
 
-  ipcMain.on('window:minimize', () => win.minimize());
-  ipcMain.on('window:maximize-toggle', () => {
+  ipcMain.on('window:minimize', (e) => { if (fromMain(e)) win.minimize(); });
+  ipcMain.on('window:maximize-toggle', (e) => {
+    if (!fromMain(e)) return;
     if (win.isMaximized()) win.unmaximize(); else win.maximize();
   });
 
   let normalBounds = null;
   ipcMain.on('window:mini-mode', (event, enable) => {
+    if (!fromMain(event) || typeof enable !== 'boolean') return;
     isMiniMode = enable;
     if (enable) {
       normalBounds = win.getBounds();
@@ -359,17 +363,19 @@ function createWindow() {
   });
   win.on('maximize', () => win.webContents.send('window:maximized-state', true));
   win.on('unmaximize', () => win.webContents.send('window:maximized-state', false));
-  ipcMain.on('window:close', () => win.close());
-  ipcMain.on('app:version-sync', (event) => { event.returnValue = app.getVersion(); });
-  ipcMain.on('paths:music-sync', (event) => { event.returnValue = app.getPath('music'); });
-  ipcMain.on('help:open', () => createHelpWindow(win));
+  ipcMain.on('window:close', (e) => { if (fromMain(e)) win.close(); });
+  ipcMain.on('app:version-sync', (event) => { event.returnValue = fromApp(event) ? app.getVersion() : ''; });
+  ipcMain.on('paths:music-sync', (event) => { event.returnValue = fromApp(event) ? app.getPath('music') : ''; });
+  ipcMain.on('help:open', (e) => { if (fromMain(e)) createHelpWindow(win); });
 
-  ipcMain.handle('deps:check', async () => {
+  ipcMain.handle('deps:check', async (e) => {
+    if (!fromMain(e)) return { ffmpeg: { ok: false, path: null } };
     const ffmpegPath = await resolveFfmpegPath();
     return { ffmpeg: { ok: !!ffmpegPath, path: ffmpegPath } };
   });
 
-  ipcMain.handle('deps:install', async () => {
+  ipcMain.handle('deps:install', async (e) => {
+    if (!fromMain(e)) return { ok: false, error: 'denied' };
     try {
       const installedPath = await installFfmpeg((progress) => {
         win.webContents.send('deps:progress', progress);
@@ -382,7 +388,8 @@ function createWindow() {
 
   ipcMain.handle('metadata:read', async (event, filePath) => {
     try {
-      if (!filePath || !fs.existsSync(filePath)) return null;
+      // tags are only read from absolute paths of real audio files
+      if (!fromMain(event) || typeof filePath !== 'string' || !path.isAbsolute(filePath) || !AUDIO_FILE_EXTENSIONS.includes(path.extname(filePath).toLowerCase()) || !fs.statSync(filePath).isFile()) return null;
       const mm = await import('music-metadata');
       const meta = await mm.parseFile(filePath, { duration: false, skipCovers: false });
       const { common } = meta;
@@ -403,6 +410,7 @@ function createWindow() {
   });
 
   ipcMain.handle('settings:export', async (event, data) => {
+    if (!fromMain(event) || !data || typeof data !== 'object' || Array.isArray(data) || JSON.stringify(data).length > 8 * 1024 * 1024) return { canceled: false, ok: false, error: 'invalid data' };
     const result = await dialog.showSaveDialog(win, {
       defaultPath: 'waveframe-backup.json',
       filters: [{ name: 'Waveframe Backup', extensions: ['json'] }],
@@ -416,13 +424,15 @@ function createWindow() {
     }
   });
 
-  ipcMain.handle('settings:import', async () => {
+  ipcMain.handle('settings:import', async (event) => {
+    if (!fromMain(event)) return { canceled: true };
     const result = await dialog.showOpenDialog(win, {
       properties: ['openFile'],
       filters: [{ name: 'Waveframe Backup', extensions: ['json'] }],
     });
     if (result.canceled || !result.filePaths[0]) return { canceled: true };
     try {
+      if (fs.statSync(result.filePaths[0]).size > 8 * 1024 * 1024) return { canceled: false, ok: false, error: 'file too large' };
       const raw = fs.readFileSync(result.filePaths[0], 'utf-8');
       const data = JSON.parse(raw);
       return { canceled: false, ok: true, data };
@@ -431,7 +441,8 @@ function createWindow() {
     }
   });
 
-  ipcMain.handle('dialog:choose-folder', async () => {
+  ipcMain.handle('dialog:choose-folder', async (event) => {
+    if (!fromMain(event)) return { canceled: true };
     const { canceled, filePaths } = await dialog.showOpenDialog(win, {
       properties: ['openDirectory', 'createDirectory'],
     });
@@ -462,7 +473,6 @@ if (!gotSingleInstanceLock) {
 
   app.whenReady().then(() => {
     suiteApi = suite.init({
-      onLang: (l) => { uiLang = l; },
       getMainWin: () => mainWin,
       getTheme: () => currentTheme,
       isMini: () => !!mainWin && !mainWin.isDestroyed() && mainWin.getBounds().width < 700,

@@ -1,10 +1,10 @@
-; Waveframe - Inno Setup installer script (per-user, no admin rights needed).
+; Waveframe - Inno Setup installer script (machine-wide, Program Files; asks for administrator rights; removes an earlier per-user install).
 ; Build:  npm run dist        (creates release\win-unpacked and the portable exe via electron-builder)
 ;         ISCC.exe /DMyAppVersion=1.7.0 installer\Waveframe.iss      -> installer\output\Waveframe.Setup.<version>.exe
 ; Greek.isl is the unofficial community translation from the Inno Setup repository (copied in Languages\ so the script compiles anywhere).
 
 #ifndef MyAppVersion
-  #define MyAppVersion "1.9.1"
+  #define MyAppVersion "1.10.0"
 #endif
 #define MyAppName "Waveframe"
 #define MyAppExeName "Waveframe.exe"
@@ -30,8 +30,7 @@ OutputBaseFilename=Waveframe.Setup.{#MyAppVersion}
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
-PrivilegesRequired=lowest
-PrivilegesRequiredOverridesAllowed=dialog
+PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 ChangesAssociations=yes
@@ -78,3 +77,34 @@ Root: HKA; Subkey: "Software\Classes\.wma\OpenWithProgids"; ValueType: string; V
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent
+
+[Code]
+// Earlier builds (1.6 - 1.9) were installed per user (%LocalAppData%\Programs\Waveframe, HKCU uninstall entry; 1.6/1.7 also had an
+// electron-builder NSIS entry). This version installs machine-wide into Program Files: remove the per-user copy first (its settings live in
+// %AppData%\waveframe and are kept) so there are no duplicate shortcuts or autostart entries.
+procedure RunUninstaller(Key: String; Args: String);
+var
+  Cmd, Exe: String;
+  ResultCode: Integer;
+begin
+  if RegQueryStringValue(HKCU, Key, 'UninstallString', Cmd) then
+  begin
+    Exe := RemoveQuotes(Cmd);
+    if FileExists(Exe) then
+      Exec(Exe, Args, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  end;
+end;
+
+procedure RemovePerUserInstall;
+begin
+  RunUninstaller('Software\Microsoft\Windows\CurrentVersion\Uninstall\{6F1D2C84-3B7A-4E59-A0C2-9D4E8B5A17F3}_is1', '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART');
+  RunUninstaller('Software\Microsoft\Windows\CurrentVersion\Uninstall\com.example.waveframe', '/S');
+  // a stale per-user autostart entry would start the removed copy
+  RegDeleteValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Run', 'Waveframe');
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+begin
+  RemovePerUserInstall;
+  Result := '';
+end;

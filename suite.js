@@ -55,13 +55,14 @@ function majorMinor(v) {
 
 /* ------------------------------ persistent state ------------------------------ */
 
-const STATE_DEFAULTS = { welcomeSeen: '', welcomeOptOut: false, familyOffered: false, notifiedVersion: '', notifyEnabled: true, lastCheck: 0, releases: {} };
+const STATE_DEFAULTS = { welcomeSeen: '', welcomeOptOut: false, familyOffered: false, notifiedVersion: '', skippedVersion: '', notifyEnabled: true, lastCheck: 0, releases: {} };
 
 function sanitizeState(raw) {
   const s = { ...STATE_DEFAULTS, releases: {} };
   if (!raw || typeof raw !== 'object') return s;
   if (typeof raw.welcomeSeen === 'string' && raw.welcomeSeen.length < 20) s.welcomeSeen = raw.welcomeSeen;
   if (typeof raw.notifiedVersion === 'string' && raw.notifiedVersion.length < 40) s.notifiedVersion = raw.notifiedVersion;
+  if (typeof raw.skippedVersion === 'string' && raw.skippedVersion.length < 40) s.skippedVersion = raw.skippedVersion;
   for (const k of ['welcomeOptOut', 'familyOffered', 'notifyEnabled']) if (typeof raw[k] === 'boolean') s[k] = raw[k];
   if (Number.isFinite(raw.lastCheck)) s.lastCheck = raw.lastCheck;
   if (raw.releases && typeof raw.releases === 'object') {
@@ -97,8 +98,10 @@ function shouldShowWelcome(state, version) {
 }
 
 // Balloon: only for a stable release that is newer than the running version and was not announced before.
+// "Skip this version" silences exactly that version; a newer one is announced again.
 function shouldNotify(state, latestTag, currentVersion) {
-  return state.notifyEnabled !== false && isNewer(latestTag, currentVersion) && state.notifiedVersion !== String(latestTag).replace(/^v/, '');
+  const v = String(latestTag).replace(/^v/, '');
+  return state.notifyEnabled !== false && isNewer(latestTag, currentVersion) && state.notifiedVersion !== v && state.skippedVersion !== v;
 }
 
 /* ------------------------------ URL / host rules ------------------------------ */
@@ -232,13 +235,22 @@ function trimRelease(r, repo) {
     name: str(a && a.name, 200), size: Number.isFinite(a && a.size) ? a.size : 0,
     digest: typeof (a && a.digest) === 'string' ? a.digest : '', url: a && a.browser_download_url,
   })).filter((a) => a.name && isAllowedUrl(a.url, DOWNLOAD_OPTS));
-  return { tag: r.tag_name, version: r.tag_name.replace(/^v/, ''), url: r.html_url, assets };
+  return { tag: r.tag_name, version: r.tag_name.replace(/^v/, ''), url: r.html_url, assets, notes: typeof r.body === 'string' ? r.body.slice(0, 4000) : '' };
 }
 
 function pickInstaller(release, app) {
   if (!release || !app.installerAsset) return null;
   const re = new RegExp(app.installerAsset);
   return release.assets.find((a) => re.test(a.name)) || null;
+}
+
+// Only files of THIS repository's own releases are ever downloaded as an update.
+function isTrustedReleaseDownload(url, repo) {
+  if (!isAllowedUrl(url, { hosts: ['github.com'] })) return false;
+  return new URL(url).pathname.startsWith(`/${OWNER}/${repo}/releases/download/`);
+}
+function findChecksumAsset(release, installerName) {
+  return (release && release.assets || []).find((a) => a.name === installerName + '.sha256') || null;
 }
 
 function digestSha256(asset) {
@@ -257,6 +269,29 @@ function parseChecksumText(text, fileName) {
 
 function sha256Matches(actual, expected) {
   return typeof actual === 'string' && typeof expected === 'string' && /^[0-9a-f]{64}$/i.test(expected) && actual.toLowerCase() === expected.toLowerCase();
+}
+
+/* ------------------------------ update helpers ------------------------------ */
+
+// SHQueryUserNotificationState: 2 = busy (full-screen app), 3 = D3D full screen (game), 4 = presentation mode.
+const isBusyNotificationState = (n) => n === 2 || n === 3 || n === 4;
+const FULLSCREEN_PS = "Add-Type -TypeDefinition 'using System.Runtime.InteropServices; public static class Q { [DllImport(\"shell32.dll\")] public static extern int SHQueryUserNotificationState(out int s); }'; $s = 0; [void][Q]::SHQueryUserNotificationState([ref]$s); $s";
+
+const psQuote = (x) => "'" + String(x).replace(/'/g, "''") + "'";
+
+// The helper that outlives the app: waits for the app to end, re-checks the hash of the downloaded setup, runs it silently
+// (the setup elevates itself for Program Files), and opens the app again when it succeeded.
+// exePaths: where the app may be after the setup ran (the first that exists is started - a per-user install moves to Program Files).
+function buildUpdateScript({ pid, setupPath, sha256, exePaths }) {
+  if (!/^\d+$/.test(String(pid)) || !/^[0-9a-f]{64}$/i.test(sha256)) throw new Error('bad update parameters');
+  return [
+    "$ErrorActionPreference = 'Stop'",
+    `try { Wait-Process -Id ${pid} -Timeout 120 -ErrorAction SilentlyContinue } catch { }`,
+    `if ((Get-FileHash -LiteralPath ${psQuote(setupPath)} -Algorithm SHA256).Hash.ToLowerInvariant() -ne ${psQuote(sha256.toLowerCase())}) { exit 2 }`,
+    `$p = Start-Process -FilePath ${psQuote(setupPath)} -ArgumentList '/SILENT','/SUPPRESSMSGBOXES','/NORESTART','/CLOSEAPPLICATIONS' -Wait -PassThru`,
+    `$exe = @(${exePaths.map(psQuote).join(',')}) | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1`,
+    'if ($p.ExitCode -eq 0 -and $exe) { Start-Process -FilePath $exe }',
+  ].join('\r\n');
 }
 
 /* ------------------------------ network (allow-list, size cap, timeout) ------------------------------ */
@@ -337,6 +372,7 @@ module.exports = {
   STATE_DEFAULTS, sanitizeState, createStore, shouldShowWelcome, shouldNotify,
   isAllowedUrl, isRepoPageUrl, validateCatalogue,
   expandInstallPath, parseUninstallOutput, findInstalled,
-  trimRelease, pickInstaller, digestSha256, parseChecksumText, sha256Matches,
+  trimRelease, pickInstaller, digestSha256, parseChecksumText, sha256Matches, isTrustedReleaseDownload, findChecksumAsset,
+  isBusyNotificationState, FULLSCREEN_PS, psQuote, buildUpdateScript,
   httpGet, downloadVerified,
 };

@@ -251,3 +251,54 @@ test('install detection uses the uninstall names and paths of the catalogue (Ops
   const byPath = S.findInstalled(opsis, { entries: [], exists: (p) => p === 'C:\\Program Files\\Opsis - Desktop Customization\\Opsis.exe', env });
   assert.equal(byPath.installed, true);
 });
+
+// ---- update mechanism (same flow as the Opsis News Crawler: balloon once per version, skip version, SHA-256, silent install) ----
+
+test('"Skip this version" silences exactly that version; a newer one is announced again', () => {
+  const st = S.sanitizeState({ skippedVersion: '1.10.0' });
+  assert.equal(S.shouldNotify(st, 'v1.10.0', '1.9.1'), false);
+  assert.equal(S.shouldNotify(st, 'v1.10.1', '1.9.1'), true);
+  assert.equal(S.sanitizeState({ skippedVersion: 5 }).skippedVersion, '', 'wrong type is dropped');
+});
+
+test('only files of this repository\'s own releases may be downloaded as an update', () => {
+  const ok = 'https://github.com/' + S.OWNER + '/waveframe/releases/download/v1.10.0/Waveframe.Setup.1.10.0.exe';
+  assert.equal(S.isTrustedReleaseDownload(ok, 'waveframe'), true);
+  assert.equal(S.isTrustedReleaseDownload(ok.replace('waveframe/releases', 'other/releases'), 'waveframe'), false);
+  assert.equal(S.isTrustedReleaseDownload('https://evil.example/' + S.OWNER + '/waveframe/releases/download/x.exe', 'waveframe'), false);
+  assert.equal(S.isTrustedReleaseDownload(ok.replace('https', 'http'), 'waveframe'), false);
+  assert.equal(S.isTrustedReleaseDownload('https://github.com/' + S.OWNER + '/waveframe/archive/main.zip', 'waveframe'), false);
+});
+
+test('release notes are kept (capped) and the .sha256 asset next to the installer is found', () => {
+  const rel = S.trimRelease({
+    tag_name: 'v1.10.0', html_url: 'https://github.com/' + S.OWNER + '/waveframe/releases/tag/v1.10.0', draft: false, prerelease: false, body: 'x'.repeat(9000),
+    assets: [
+      { name: 'Waveframe.Setup.1.10.0.exe', size: 5, browser_download_url: 'https://github.com/' + S.OWNER + '/waveframe/releases/download/v1.10.0/Waveframe.Setup.1.10.0.exe' },
+      { name: 'Waveframe.Setup.1.10.0.exe.sha256', size: 90, browser_download_url: 'https://github.com/' + S.OWNER + '/waveframe/releases/download/v1.10.0/Waveframe.Setup.1.10.0.exe.sha256' },
+    ],
+  }, 'waveframe');
+  assert.equal(rel.notes.length, 4000);
+  assert.equal(S.findChecksumAsset(rel, 'Waveframe.Setup.1.10.0.exe').name, 'Waveframe.Setup.1.10.0.exe.sha256');
+  assert.equal(S.findChecksumAsset(rel, 'nope.exe'), null);
+});
+
+test('no balloon while a game / full-screen app / presentation is in front (SHQueryUserNotificationState 2, 3, 4)', () => {
+  for (const n of [2, 3, 4]) assert.equal(S.isBusyNotificationState(n), true);
+  for (const n of [0, 1, 5, 6, 7, NaN]) assert.equal(S.isBusyNotificationState(n), false);
+  assert.match(S.FULLSCREEN_PS, /SHQueryUserNotificationState/);
+});
+
+test('update helper script: waits for the app, re-checks the SHA-256, runs the setup silently, restarts the app; quotes safely', () => {
+  const script = S.buildUpdateScript({ pid: 4242, setupPath: "C:\\Users\\o'brien\\update\\Waveframe.Setup.exe", sha256: 'AB'.repeat(32), exePaths: ['C:\\Program Files\\Waveframe\\Waveframe.exe', 'C:\\old\\Waveframe.exe'] });
+  assert.match(script, /Wait-Process -Id 4242/);
+  assert.match(script, /Get-FileHash -LiteralPath 'C:\\Users\\o''brien\\update\\Waveframe\.Setup\.exe' -Algorithm SHA256/);
+  assert.ok(script.includes("'" + 'ab'.repeat(32) + "'"), 'expected hash is lower-cased');
+  assert.match(script, /'\/SILENT','\/SUPPRESSMSGBOXES','\/NORESTART','\/CLOSEAPPLICATIONS'/);
+  assert.match(script, /exit 2/, 'a hash mismatch aborts');
+  assert.match(script, /if \(\$p\.ExitCode -eq 0 -and \$exe\)/, 'the app is only restarted after a successful install');
+  assert.match(script, /@\('C:\\Program Files\\Waveframe\\Waveframe\.exe','C:\\old\\Waveframe\.exe'\)/, 'the new Program Files location is tried first');
+  assert.throws(() => S.buildUpdateScript({ pid: '1; calc', setupPath: 'x', sha256: 'a'.repeat(64), exePaths: ['y'] }));
+  assert.throws(() => S.buildUpdateScript({ pid: 1, setupPath: 'x', sha256: 'zz', exePaths: ['y'] }));
+  assert.equal(S.psQuote("a'b"), "'a''b'");
+});

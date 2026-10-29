@@ -353,5 +353,7 @@
   build();
   api.onConvProgress(onProgress);
   document.addEventListener('waveframe:language-changed', () => { if (!running) { if ($('convFormat')) collect(); build(); } });
-  window.WaveframeConverter = { processBuffer, convertFile, parseTime, decode };
+  // addPaths / showRunning are exposed for the layout self-test (every language x zoom, with files in the list and while converting)
+  function showRunning(on) { $('convStart').classList.toggle('dep-hidden', on); $('convCancel').classList.toggle('dep-hidden', !on); $('convTrack').classList.toggle('dep-hidden', !on); }
+  window.WaveframeConverter = { processBuffer, convertFile, parseTime, decode, addPaths, showRunning, clearFiles: () => { files = []; renderList(); } };
 })();

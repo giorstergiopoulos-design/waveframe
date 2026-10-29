@@ -2,7 +2,7 @@
 <html lang="el">
 <head>
 <meta charset="UTF-8" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:;" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; img-src 'self' data:;" />
 <title>Waveframe</title>
 <link rel="stylesheet" href="splash.css" />
 <script src="theme-init.js"></script>
@@ -34,9 +34,18 @@
         <div class="grid" id="grid"></div>
       </div>
 
+      <div class="body dep-hidden" id="updateBody">
+        <p class="upd-lead" id="updLead"></p>
+        <h3 class="upd-h" id="updNotesTitle"></h3>
+        <pre class="upd-notes" id="updNotes"></pre>
+        <div class="upd-track dep-hidden" id="updTrack"><div class="upd-fill" id="updFill"></div></div>
+        <p class="upd-status" id="updStatus" role="status"></p>
+      </div>
+
       <footer class="foot">
         <label class="check" id="dontShowWrap"><input type="checkbox" id="dontShow" /> <span id="dontShowLabel"></span></label>
         <span class="spacer"></span>
+        <button class="btn ghost dep-hidden" id="btnSkipVer"></button>
         <button class="btn ghost" id="btnSkip"></button>
         <button class="btn" id="btnBack"></button>
         <button class="btn primary" id="btnNext"></button>

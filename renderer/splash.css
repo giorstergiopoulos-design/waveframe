@@ -247,3 +247,11 @@ body.reduced .page, body.reduced .page.active { transition: opacity .12s; transf
 
 .app-icon.has-img { background: none; }
 .app-icon.has-img img { width: 44px; height: 44px; object-fit: contain; display: block; }
+
+/* ---- update window ---- */
+.upd-lead { margin: 0 0 10px; font-size: 15px; line-height: 1.5; }
+.upd-h { margin: 8px 0 6px; font-size: 13px; color: var(--text-dim); font-weight: 600; }
+.upd-notes { margin: 0; max-height: 190px; overflow: auto; white-space: pre-wrap; font: inherit; font-size: 12.5px; line-height: 1.5; padding: 10px 12px; background: color-mix(in srgb, var(--accent) 7%, transparent); border: 1px solid var(--panel-border); border-radius: 10px; user-select: text; }
+.upd-track { height: 8px; margin-top: 12px; border-radius: 4px; background: var(--panel-border); overflow: hidden; }
+.upd-fill { height: 100%; width: 0; background: linear-gradient(to right, var(--accent-2), var(--accent-3)); transition: width .2s; }
+.upd-status { margin: 8px 0 0; font-size: 12.5px; color: var(--text-dim); min-height: 16px; }

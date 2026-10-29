@@ -2,14 +2,14 @@
 <html lang="el">
 <head>
 <meta charset="UTF-8" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self';" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none';" />
 <title>Waveframe — Βοήθεια</title>
 <link rel="stylesheet" href="help.css" />
 <script src="theme-init.js"></script>
 </head>
 <body>
   <header class="help-header">
-    <h1>Waveframe <span id="helpVersion">v1.9.1</span></h1>
+    <h1>Waveframe <span id="helpVersion">v1.10.0</span></h1>
     <div class="help-tabs">
       <button class="help-tab active" data-tab="guide">Οδηγίες χρήσης</button>
       <button class="help-tab" data-tab="changelog">Ιστορικό εκδόσεων</button>
@@ -52,6 +52,15 @@
     </section>
 
     <section id="help-changelog" class="help-pane">
+      <div class="changelog-entry">
+        <div class="changelog-version">v1.10.0</div>
+        <ul>
+          <li>Νέος μηχανισμός ενημέρωσης (ίδιος με του Opsis News Crawler): έλεγχος 30 δευτερόλεπτα μετά την εκκίνηση και ανά 24 ώρες με ETag, μία ειδοποίηση ανά έκδοση, καμία ειδοποίηση όσο υπάρχει παιχνίδι/πλήρης οθόνη/παρουσίαση. Η ειδοποίηση ανοίγει παράθυρο με «Λήψη και εγκατάσταση», «Αργότερα», «Παράλειψη αυτής της έκδοσης» και «Τι νέο υπάρχει»· η λήψη γίνεται με έλεγχο SHA-256 και σιωπηλή εγκατάσταση, χωρίς ποτέ να τρέχει μη επαληθευμένο αρχείο. Όλα τα κείμενα σε 20 γλώσσες.</li>
+          <li>Διόρθωση διάταξης στην καρτέλα Εξαγωγή / Μετατροπή: κάθε ομάδα κουμπιών έχει δικό της διάστημα και δεν στοιβάζονται· τεστ διάταξης σε 20 γλώσσες × 100%/150%.</li>
+          <li>Ασφάλεια: κάθε IPC κανάλι απαντά μόνο στο κύριο παράθυρο και ελέγχει τύπους/μεγέθη, αυστηρότερο CSP, περιορισμένο crash log, καμία ανάγνωση tags εκτός αρχείων ήχου· στατικά τεστ ασφαλείας. Έλεγχοι CI (GitHub Actions) σε κάθε push.</li>
+          <li>Εγκατάσταση στο Program Files (χρειάζεται δικαιώματα διαχειριστή)· αν υπάρχει παλιά εγκατάσταση ανά χρήστη, αφαιρείται αυτόματα και οι ρυθμίσεις μένουν.</li>
+        </ul>
+      </div>
       <div class="changelog-entry">
         <div class="changelog-version">v1.9.1</div>
         <ul>

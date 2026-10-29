@@ -28,7 +28,7 @@ test('placeholders ({n}, {v}, {why} ...) are identical in every language', () =>
 });
 
 test('new 1.7-1.9 texts are really translated: no language except English repeats the English long text', () => {
-  const newKeys = Object.keys(I18N.en).filter((k) => /^(splash|conv)\./.test(k) && I18N.en[k].length >= 30);
+  const newKeys = Object.keys(I18N.en).filter((k) => /^(splash|conv|upd|dl|ff)\./.test(k) && I18N.en[k].length >= 30);
   for (const l of LANGS.filter((x) => x !== 'en')) {
     const same = newKeys.filter((k) => I18N[l][k] === I18N.en[k]);
     assert.deepEqual(same, [], `${l}: English leftovers`);
@@ -38,7 +38,7 @@ test('new 1.7-1.9 texts are really translated: no language except English repeat
 test('no raw keys or stray Greek in the Latin/Cyrillic languages for the new texts', () => {
   const greek = /[Ͱ-Ͽ]/;
   for (const l of LANGS.filter((x) => x !== 'el')) {
-    for (const k of Object.keys(I18N.en).filter((x) => /^(splash|conv|settings\.(suite|notify|openFamily|openWelcome)|tab\.converter)/.test(x))) {
+    for (const k of Object.keys(I18N.en).filter((x) => /^(splash|conv|upd|dl|ff|settings\.(suite|notify|openFamily|openWelcome)|tab\.converter)/.test(x))) {
       assert.ok(!greek.test(I18N[l][k]), `${l}:${k} contains Greek`);
       assert.ok(I18N[l][k] !== k && !/^(splash|conv|settings|tab)\.[\w.]+$/.test(I18N[l][k]), `${l}:${k} looks like a raw key`);
     }

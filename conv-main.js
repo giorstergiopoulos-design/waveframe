@@ -110,6 +110,7 @@ function init({ getMainWin, resolveFfmpegPath, installFfmpeg, confirmFfmpegDownl
 
   // WAVEFRAME_SELFTEST: runs the real renderer converter (lazy load, decode, Enhancer chain, BS.1770 gain, ffmpeg encode) on a generated tone.
   async function selfTest() {
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     const out = [];
     const check = (name, ok, extra) => out.push({ name, ok: !!ok, extra: extra === undefined ? '' : String(extra) });
     const os = require('os');
@@ -154,6 +155,35 @@ function init({ getMainWin, resolveFfmpegPath, installFfmpeg, confirmFfmpegDownl
         check('direct route (ffmpeg -> MP3) runs', d && d.output && !d.error, d && (d.error || path.basename(d.output)));
       }
       check('original is untouched', fs.statSync(src).size === 44 + n * 4);
+      // layout: no two controls of the Export / Convert tab overlap, in every language, at 100 % and 150 %, with files listed and while converting
+      const AUDIT = `(() => {
+        const pane = document.getElementById('tab-converter');
+        const els = [...pane.querySelectorAll('button, select, input, .dest-path, .conv-drop, .conv-name, .conv-state')].filter((e) => e.offsetParent && !e.closest('.dep-hidden'));
+        const R = els.map((e) => ({ e, r: e.getBoundingClientRect() })).filter((o) => o.r.width > 0 && o.r.height > 0);
+        const out = [];
+        for (let i = 0; i < R.length; i++) for (let j = i + 1; j < R.length; j++) {
+          if (R[i].e.contains(R[j].e) || R[j].e.contains(R[i].e)) continue;
+          const a = R[i].r, b = R[j].r;
+          const w = Math.min(a.right, b.right) - Math.max(a.left, b.left), h = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+          if (w > 2 && h > 2) out.push((R[i].e.id || R[i].e.className || R[i].e.tagName) + ' x ' + (R[j].e.id || R[j].e.className || R[j].e.tagName));
+        }
+        return out.slice(0, 5);
+      })()`;
+      await win.webContents.executeJavaScript("document.querySelector('.tab-btn[data-tab=\"converter\"]').click()");
+      const langs = await win.webContents.executeJavaScript('Object.keys(I18N)');
+      const bad = [];
+      for (const zoom of [1, 1.5]) {
+        win.webContents.setZoomFactor(zoom);
+        for (const l of langs) {
+          await win.webContents.executeJavaScript(`(async () => { setLanguage(${JSON.stringify(l)}); await loadConverter(); WaveframeConverter.clearFiles(); WaveframeConverter.addPaths(['C:\\\\Music\\\\a-very-long-file-name-for-the-layout-test-number-one.mp3', 'C:\\\\Music\\\\b.flac']); WaveframeConverter.showRunning(${l.charCodeAt(0) % 2 === 0}); })()`);
+          await wait(120);
+          const o = await win.webContents.executeJavaScript(AUDIT);
+          if (o.length) bad.push(`${l} x${zoom}: ${o.join(', ')}`);
+        }
+      }
+      win.webContents.setZoomFactor(1);
+      await win.webContents.executeJavaScript("setLanguage('el'); WaveframeConverter.clearFiles(); WaveframeConverter.showRunning(false)");
+      check('Export / Convert layout: no overlapping controls (20 languages x 100 % / 150 %)', bad.length === 0, bad.slice(0, 3).join(' | '));
     } catch (e) { check('converter self-test threw', false, e && e.stack || e); }
     finally { try { fs.rmSync(dir, { recursive: true, force: true }); } catch (_) { /* temp */ } }
     return out;
