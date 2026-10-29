@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.10.0
+## 2.0.0
 - Update mechanism, same as the Opsis News Crawler: check 30 s after start and every 24 h with ETag; one balloon per version, none while a game / full-screen app / presentation is in front (retry after 15 min); the balloon opens a window with Download and install, Later, Skip this version and What's new; the setup is downloaded from this repository's releases only, verified with SHA-256 (GitHub digest or the .sha256 asset), re-checked by a helper and installed silently, then the app restarts. Nothing unverified is ever run; portable copies and versions without a digest open the release page. All texts in 20 languages (balloon, window, dialogs, FFmpeg download confirmation).
 - Export / Convert layout: every group of controls has its own spacing; layout self-test over 20 languages x 100 % / 150 % with files listed and while converting.
 - Security: IPC channels answer only the main window and validate types/sizes; stricter CSP (object-src, base-uri, form-action); bounded and rotated crash log; tags read only from absolute audio-file paths; Help window navigation lock; static security tests; GitHub Actions CI (npm test + Electron self-test).

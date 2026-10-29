@@ -255,14 +255,14 @@ test('install detection uses the uninstall names and paths of the catalogue (Ops
 // ---- update mechanism (same flow as the Opsis News Crawler: balloon once per version, skip version, SHA-256, silent install) ----
 
 test('"Skip this version" silences exactly that version; a newer one is announced again', () => {
-  const st = S.sanitizeState({ skippedVersion: '1.10.0' });
-  assert.equal(S.shouldNotify(st, 'v1.10.0', '1.9.1'), false);
-  assert.equal(S.shouldNotify(st, 'v1.10.1', '1.9.1'), true);
+  const st = S.sanitizeState({ skippedVersion: '2.0.0' });
+  assert.equal(S.shouldNotify(st, 'v2.0.0', '1.9.1'), false);
+  assert.equal(S.shouldNotify(st, 'v2.0.1', '1.9.1'), true);
   assert.equal(S.sanitizeState({ skippedVersion: 5 }).skippedVersion, '', 'wrong type is dropped');
 });
 
 test('only files of this repository\'s own releases may be downloaded as an update', () => {
-  const ok = 'https://github.com/' + S.OWNER + '/waveframe/releases/download/v1.10.0/Waveframe.Setup.1.10.0.exe';
+  const ok = 'https://github.com/' + S.OWNER + '/waveframe/releases/download/v2.0.0/Waveframe.Setup.2.0.0.exe';
   assert.equal(S.isTrustedReleaseDownload(ok, 'waveframe'), true);
   assert.equal(S.isTrustedReleaseDownload(ok.replace('waveframe/releases', 'other/releases'), 'waveframe'), false);
   assert.equal(S.isTrustedReleaseDownload('https://evil.example/' + S.OWNER + '/waveframe/releases/download/x.exe', 'waveframe'), false);
@@ -272,14 +272,14 @@ test('only files of this repository\'s own releases may be downloaded as an upda
 
 test('release notes are kept (capped) and the .sha256 asset next to the installer is found', () => {
   const rel = S.trimRelease({
-    tag_name: 'v1.10.0', html_url: 'https://github.com/' + S.OWNER + '/waveframe/releases/tag/v1.10.0', draft: false, prerelease: false, body: 'x'.repeat(9000),
+    tag_name: 'v2.0.0', html_url: 'https://github.com/' + S.OWNER + '/waveframe/releases/tag/v2.0.0', draft: false, prerelease: false, body: 'x'.repeat(9000),
     assets: [
-      { name: 'Waveframe.Setup.1.10.0.exe', size: 5, browser_download_url: 'https://github.com/' + S.OWNER + '/waveframe/releases/download/v1.10.0/Waveframe.Setup.1.10.0.exe' },
-      { name: 'Waveframe.Setup.1.10.0.exe.sha256', size: 90, browser_download_url: 'https://github.com/' + S.OWNER + '/waveframe/releases/download/v1.10.0/Waveframe.Setup.1.10.0.exe.sha256' },
+      { name: 'Waveframe.Setup.2.0.0.exe', size: 5, browser_download_url: 'https://github.com/' + S.OWNER + '/waveframe/releases/download/v2.0.0/Waveframe.Setup.2.0.0.exe' },
+      { name: 'Waveframe.Setup.2.0.0.exe.sha256', size: 90, browser_download_url: 'https://github.com/' + S.OWNER + '/waveframe/releases/download/v2.0.0/Waveframe.Setup.2.0.0.exe.sha256' },
     ],
   }, 'waveframe');
   assert.equal(rel.notes.length, 4000);
-  assert.equal(S.findChecksumAsset(rel, 'Waveframe.Setup.1.10.0.exe').name, 'Waveframe.Setup.1.10.0.exe.sha256');
+  assert.equal(S.findChecksumAsset(rel, 'Waveframe.Setup.2.0.0.exe').name, 'Waveframe.Setup.2.0.0.exe.sha256');
   assert.equal(S.findChecksumAsset(rel, 'nope.exe'), null);
 });
 
