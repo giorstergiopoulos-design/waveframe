@@ -5,7 +5,8 @@
 - Export / Convert layout: every group of controls has its own spacing; layout self-test over 20 languages x 100 % / 150 % with files listed and while converting.
 - Security: IPC channels answer only the main window and validate types/sizes; stricter CSP (object-src, base-uri, form-action); bounded and rotated crash log; tags read only from absolute audio-file paths; Help window navigation lock; static security tests; GitHub Actions CI (npm test + Electron self-test).
 - Installer: machine-wide in Program Files (administrator rights); an earlier per-user install (Inno or NSIS) and its autostart entry are removed first, settings are kept.
-- Open: the real silent install over an older version was not executed in this environment (script and hash logic are unit-tested; the update window is covered by the self-test); the reported button overlap in Export / Convert could not be reproduced headless, spacing was fixed and the layout test added; natives review of the 18 machine-translated languages is still pending.
+- Verified afterwards: the real PowerShell update helper runs end to end with a fake setup (waits for the app, re-checks SHA-256, silent switches, restarts from Program Files; a tampered file is refused with exit 2) - test/update-helper.test.js; a real Windows toast is shown (Notification 'show' event); the Help changelog entry is localised in 20 languages.
+- Open: the elevated Inno install over an older version (needs a UAC click on a real PC), clicking the toast, and native-speaker / spell-checker review of the 18 machine-translated languages.
 
 ## 1.9.1
 - Translations: the Export/Convert, welcome guide, Opsis-family, notification and mini-player texts now exist in all 20 languages (were Greek/English only for 1.8-1.9). Coverage test: same keys and placeholders in every language, no English leftovers, no raw keys (test/i18n.test.js).

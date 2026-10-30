@@ -9,7 +9,7 @@
     "start": "electron .",
     "dist": "electron-builder --win",
     "smoke-test": "node smoke-test.js",
-    "test": "node --test test/audiolib.test.js test/suite.test.js test/convert.test.js test/convert.real.test.js test/i18n.test.js test/security.test.js",
+    "test": "node --test test/audiolib.test.js test/suite.test.js test/convert.test.js test/convert.real.test.js test/i18n.test.js test/security.test.js test/update-helper.test.js",
     "selftest": "node selftest.js"
   },
   "devDependencies": {
