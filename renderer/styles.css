@@ -839,3 +839,31 @@ body.mini-mode #bgCanvas { display: none; }
 
 .conv-panel .conv-field select, .conv-panel .conv-field input { min-width: 0; }
 .conv-panel .conv-grid { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+
+/* ---- Export / Convert: audio card + video card side by side (Opsis Media Suite) ---- */
+.conv-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(540px, 1fr)); gap: 16px; align-items: start; }
+.conv-cols > .panel { margin-bottom: 0; min-width: 0; }
+.vid-enc { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 0 0 12px; font-size: 12px; }
+.vid-enc-title { color: var(--text-dim); margin-right: 2px; }
+.vid-chip { padding: 3px 9px; border-radius: 99px; border: 1px solid var(--panel-border); background: var(--panel-solid); white-space: nowrap; }
+.vid-chip.gpu { border-color: var(--good); }
+.vid-chip.none { color: var(--text-dim); opacity: 0.75; }
+.vid-warn { color: var(--danger); line-height: 1.45; }
+.vid-web { flex-basis: 100%; color: var(--text-dim); font-size: 11.5px; }
+.vid-row { grid-template-columns: 64px minmax(0, 1fr) auto auto; }
+.vid-thumb { width: 64px; height: 38px; object-fit: cover; border-radius: 6px; background: var(--panel-border); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.vid-info { min-width: 0; }
+.vid-meta { font-size: 11px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vid-estimate { min-height: 16px; }
+.vid-sub-row { align-items: center; gap: 10px; }
+.vid-panel .conv-presets .small-btn[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* bug fix: "#convCancel { display: block }" beat ".dep-hidden", so Cancel was visible while nothing runs */
+.conv-panel #convCancel { display: none; }
+.conv-panel #convCancel:not(.dep-hidden), .conv-panel #vidCancel:not(.dep-hidden) { display: block; margin: 18px 0 0; }
+.conv-panel #vidCancel { display: none; }
+/* file rows: name | state | button on the first line, progress bar under them (the button used to wrap to a third line) */
+.conv-row > .small-btn { grid-column: 3; grid-row: 1; }
+.conv-row > .conv-bar { grid-row: 2; }
+.vid-row > .small-btn { grid-column: 4; grid-row: 1; }
+.vid-row > .conv-bar { grid-row: 2; }

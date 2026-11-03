@@ -7,10 +7,12 @@ const fs = require('fs');
 const path = require('path');
 const L = require('./renderer/convlib.js');
 const E = require('./conv-engine.js');
+const EV = require('./conv-video.js');
+const V = require('./renderer/vidlib.js');
 
 const MAX_READ = 600 * 1024 * 1024; // the renderer decodes the whole file in memory
 
-function init({ getMainWin, resolveFfmpegPath, installFfmpeg, confirmFfmpegDownload, defaultOutDir }) {
+function init({ getMainWin, resolveFfmpegPath, installFfmpeg, confirmFfmpegDownload, defaultOutDir, defaultVideoOutDir }) {
   const trusted = (e) => { const w = getMainWin(); return !!w && !w.isDestroyed() && e.sender === w.webContents; };
   const jobs = new Map(); // id -> { cancel }
   const cancelledEarly = new Set(); // cancel requests that arrived while the job was still being prepared
@@ -60,10 +62,10 @@ function init({ getMainWin, resolveFfmpegPath, installFfmpeg, confirmFfmpegDownl
   });
 
   // 'default' = MusicWaveFrame (created on demand), 'custom' = a folder the user picked, 'source' = next to the original (undefined).
-  function resolveOutDir(req, hasSource) {
+  function resolveOutDir(req, hasSource, def = defaultOutDir) {
     if (req.outMode === 'custom' && typeof req.outDir === 'string' && path.isAbsolute(req.outDir)) return req.outDir;
     if (req.outMode === 'source' && hasSource) return undefined;
-    return defaultOutDir();
+    return def();
   }
 
   ipcMain.handle('conv:default-dir', (e) => (trusted(e) ? defaultOutDir() : null));
@@ -74,7 +76,7 @@ function init({ getMainWin, resolveFfmpegPath, installFfmpeg, confirmFfmpegDownl
       jobs.set(id, job);
       if (cancelledEarly.delete(id)) job.cancel();
       const r = await job.promise;
-      return { ok: true, output: r.output };
+      return { ok: true, output: r.output, encoder: r.encoder, fellBackFrom: r.fellBackFrom };
     } catch (err) { return errorOf(err); } finally { jobs.delete(id); cancelledEarly.delete(id); }
   }
 
@@ -100,6 +102,57 @@ function init({ getMainWin, resolveFfmpegPath, installFfmpeg, confirmFfmpegDownl
     // tracks that come from the playlist have no file on disk: name them after the track inside the output folder
     const input = hasSource ? req.path : path.join(outDir, `${req.name.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_').trim() || 'track'}.src`);
     return track(req.id, () => E.convertFromWav({ ffmpegPath: ff, input, wavBytes, options: v.options, duration: Number(req.duration) || 0, onProgress: (p) => sendProgress({ id: req.id, pct: p }), outDir }));
+  });
+
+  /* ---------- video (Opsis Media Suite, 2.1.0): same trust rules as the audio channels ---------- */
+  const MEDIA_EXTS = new Set([...E.AUDIO_EXTS, ...E.VIDEO_EXTS].map((x) => '.' + x));
+  const okMedia = (p) => okFile(p) && MEDIA_EXTS.has(path.extname(p).toLowerCase());
+  const KNOWN_ENCODERS = new Set(Object.values(V.CODECS).flatMap((c) => [...c.hw, ...c.sw]));
+
+  ipcMain.handle('vid:default-dir', (e) => (trusted(e) ? defaultVideoOutDir() : null));
+
+  ipcMain.handle('vid:pick', async (e, kind) => {
+    if (!trusted(e)) return [];
+    const subs = kind === 'subtitle';
+    const r = await dialog.showOpenDialog(getMainWin(), {
+      properties: subs ? ['openFile'] : ['openFile', 'multiSelections'],
+      filters: subs ? [{ name: 'Subtitles', extensions: ['srt', 'ass', 'ssa', 'vtt', 'sub'] }] : [{ name: 'Video', extensions: E.VIDEO_EXTS }, { name: 'All files', extensions: ['*'] }],
+    });
+    if (r.canceled) return [];
+    return r.filePaths.filter((p) => okFile(p) && (!subs || V.validSubtitlePath(p))).slice(0, V.LIMITS.maxFiles);
+  });
+
+  // What this ffmpeg can encode (only the encoder names Waveframe knows are reported) and which one is chosen for each codec.
+  ipcMain.handle('vid:encoders', async (e) => {
+    if (!trusted(e)) return { ffmpeg: false };
+    const ff = await resolveFfmpegPath();
+    if (!ff) return { ffmpeg: false };
+    const d = await EV.detectEncoders(ff);
+    const known = new Set([...d.encoders].filter((x) => KNOWN_ENCODERS.has(x)));
+    return { ffmpeg: true, hwaccels: d.hwaccels.slice(0, 30), encoders: [...known], summary: V.summarize(known) };
+  });
+
+  ipcMain.handle('vid:probe', async (e, p) => {
+    if (!trusted(e) || !okMedia(p)) return null;
+    const ff = await resolveFfmpegPath();
+    return ff ? EV.probeVideo(ff, p) : null;
+  });
+  ipcMain.handle('vid:thumb', async (e, p, at) => {
+    if (!trusted(e) || !okMedia(p)) return null;
+    const ff = await resolveFfmpegPath();
+    return ff ? EV.thumbnail(ff, p, Number(at) || 1) : null;
+  });
+
+  ipcMain.handle('vid:encode', async (e, req) => {
+    if (!trusted(e) || !req || !okId(req.id) || !okMedia(req.path)) return { ok: false, code: 'bad-request' };
+    const v = V.validateOptions(req.options);
+    if (!v.ok) return { ok: false, code: 'bad-options', error: v.errors.join(',') };
+    if (v.options.subtitleFile && !okFile(v.options.subtitleFile)) return { ok: false, code: 'bad-options', error: 'subtitleFile' };
+    const ff = await resolveFfmpegPath();
+    if (!ff) return { ok: false, code: 'no-ffmpeg' };
+    const d = await EV.detectEncoders(ff);
+    const outDir = resolveOutDir(req, true, defaultVideoOutDir);
+    return track(req.id, () => EV.encodeVideo({ ffmpegPath: ff, input: req.path, options: v.options, available: d.encoders, outDir, onProgress: (p) => sendProgress({ id: req.id, pct: Math.max(0, Math.min(1, p)) }) }));
   });
 
   ipcMain.on('conv:cancel', (e, id) => {
@@ -158,7 +211,7 @@ function init({ getMainWin, resolveFfmpegPath, installFfmpeg, confirmFfmpegDownl
       // layout: no two controls of the Export / Convert tab overlap, in every language, at 100 % and 150 %, with files listed and while converting
       const AUDIT = `(() => {
         const pane = document.getElementById('tab-converter');
-        const els = [...pane.querySelectorAll('button, select, input, .dest-path, .conv-drop, .conv-name, .conv-state')].filter((e) => e.offsetParent && !e.closest('.dep-hidden'));
+        const els = [...pane.querySelectorAll('button, select, input, .dest-path, .conv-drop, .conv-name, .conv-state, .vid-chip, .vid-meta, .vid-thumb')].filter((e) => e.offsetParent && !e.closest('.dep-hidden'));
         const R = els.map((e) => ({ e, r: e.getBoundingClientRect() })).filter((o) => o.r.width > 0 && o.r.height > 0);
         const out = [];
         for (let i = 0; i < R.length; i++) for (let j = i + 1; j < R.length; j++) {
@@ -175,7 +228,7 @@ function init({ getMainWin, resolveFfmpegPath, installFfmpeg, confirmFfmpegDownl
       for (const zoom of [1, 1.5]) {
         win.webContents.setZoomFactor(zoom);
         for (const l of langs) {
-          await win.webContents.executeJavaScript(`(async () => { setLanguage(${JSON.stringify(l)}); await loadConverter(); WaveframeConverter.clearFiles(); WaveframeConverter.addPaths(['C:\\\\Music\\\\a-very-long-file-name-for-the-layout-test-number-one.mp3', 'C:\\\\Music\\\\b.flac']); WaveframeConverter.showRunning(${l.charCodeAt(0) % 2 === 0}); })()`);
+          await win.webContents.executeJavaScript(`(async () => { setLanguage(${JSON.stringify(l)}); await loadConverter(); WaveframeConverter.clearFiles(); WaveframeConverter.addPaths(['C:\\\\Music\\\\a-very-long-file-name-for-the-layout-test-number-one.mp3', 'C:\\\\Music\\\\b.flac']); WaveframeVideoUi.clearItems(); WaveframeVideoUi.addPaths(['C:\\\\Videos\\\\an-extremely-long-video-file-name-for-the-layout-test-number-one.mp4', 'C:\\\\Videos\\\\b.mkv']); WaveframeVideoUi.showRunning(${l.charCodeAt(0) % 2 === 0}); WaveframeConverter.showRunning(${l.charCodeAt(0) % 2 === 0}); })()`);
           await wait(120);
           const o = await win.webContents.executeJavaScript(AUDIT);
           if (o.length) bad.push(`${l} x${zoom}: ${o.join(', ')}`);
@@ -184,6 +237,36 @@ function init({ getMainWin, resolveFfmpegPath, installFfmpeg, confirmFfmpegDownl
       win.webContents.setZoomFactor(1);
       await win.webContents.executeJavaScript("setLanguage('el'); WaveframeConverter.clearFiles(); WaveframeConverter.showRunning(false)");
       check('Export / Convert layout: no overlapping controls (20 languages x 100 % / 150 %)', bad.length === 0, bad.slice(0, 3).join(' | '));
+      // regression: Cancel buttons must be hidden while nothing runs (CSS specificity once kept #convCancel visible), the file-row button sits on the first line
+      const idle = await win.webContents.executeJavaScript("(async () => { await loadConverter(); WaveframeConverter.clearFiles(); WaveframeVideoUi.clearItems(); WaveframeConverter.showRunning(false); WaveframeVideoUi.showRunning(false); const vis = (id) => !!document.getElementById(id).offsetParent; return { audioCancel: vis('convCancel'), videoCancel: vis('vidCancel'), start: vis('convStart') && vis('vidStart') }; })()");
+      check('Cancel buttons are hidden while idle, Convert buttons visible', !idle.audioCancel && !idle.videoCancel && idle.start, JSON.stringify(idle));
+      const rowOk = await win.webContents.executeJavaScript("(() => { WaveframeConverter.addPaths(['C:\\\\Music\\\\a.mp3']); WaveframeVideoUi.addPaths(['C:\\\\Videos\\\\a.mp4']); const r = (sel) => { const row = document.querySelector(sel); const b = row.querySelector('.small-btn'); const n = row.querySelector('.conv-name'); return b.getBoundingClientRect().top < n.getBoundingClientRect().bottom + 2; }; const ok = r('#convList .conv-row') && r('#vidList .conv-row'); WaveframeConverter.clearFiles(); WaveframeVideoUi.clearItems(); return ok; })()");
+      check('file rows: the Remove button is on the same line as the name', rowOk === true);
+      // the video card: present, accessible, knows this ffmpeg's encoders, and a real encode through the IPC path works
+      const vidUi = await win.webContents.executeJavaScript(`(async () => {
+        await loadConverter();
+        const panel = document.getElementById('vidPanel');
+        const enc = await window.waveframe.vidEncoders();
+        return { panel: !!panel, presets: document.querySelectorAll('#vidPresets button').length, group: document.getElementById('vidPresets').getAttribute('role'), bar: document.getElementById('vidTrack').getAttribute('role'),
+          labelled: [...panel.querySelectorAll('select, input[type=text], input[type=number]')].every((c) => c.id && document.querySelector('label[for="' + c.id + '"]')), ffmpeg: enc.ffmpeg, h264: enc.ffmpeg ? enc.summary.h264.best : null };
+      })()`);
+      check('video card is built lazily with 8 presets, ARIA group/progressbar and labelled controls', vidUi.panel && vidUi.presets === 8 && vidUi.group === 'group' && vidUi.bar === 'progressbar' && vidUi.labelled, JSON.stringify(vidUi));
+      check('encoder detection reports a best H.264 encoder', !ff || !!vidUi.h264, vidUi.h264 || 'no ffmpeg');
+      if (ff) {
+        const vsrc = path.join(dir, 'clip.mp4');
+        await new Promise((res) => require('child_process').execFile(ff, ['-hide_banner', '-v', 'error', '-y', '-f', 'lavfi', '-i', 'testsrc2=size=320x180:rate=25:duration=2', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=2', '-c:v', 'mpeg4', '-c:a', 'aac', vsrc], res));
+        const vr = await win.webContents.executeJavaScript(`(async () => { const v = WaveframeVideo.validateOptions({ preset: 'webSmall', suffix: '-selftest' }); return await window.waveframe.vidEncode({ id: 'selfvid', path: ${JSON.stringify(vsrc)}, options: v.options, outMode: 'source' }); })()`);
+        check('real video encode through IPC (preset "small web")', vr && vr.ok && vr.output, vr && (vr.error || vr.output));
+        if (vr && vr.ok) {
+          const dec = await E.verifyDecodes(ff, vr.output);
+          const info = await require('./conv-video.js').probeVideo(ff, vr.output);
+          check('encoded video decodes (h264, ~2 s, 320x180)', dec.ok && info.video && info.video.codec === 'h264' && info.video.height === 180 && Math.abs(dec.decodedSeconds - 2) < 0.3, JSON.stringify(info.video) + ' ' + dec.decodedSeconds);
+        }
+        // the IPC refuses unvalidated input
+        const bad = await win.webContents.executeJavaScript(`window.waveframe.vidEncode({ id: 'x1', path: 'relative.mp4', options: {}, outMode: 'source' })`);
+        const bad2 = await win.webContents.executeJavaScript(`window.waveframe.vidEncode({ id: 'x2', path: ${JSON.stringify(vsrc)}, options: { subtitle: 'burn', subtitleFile: "C:\\\\a'b.srt" }, outMode: 'source' })`);
+        check('video IPC rejects a relative path and an injected subtitle path', bad.ok === false && bad2.ok === false && bad2.code === 'bad-options', JSON.stringify([bad.code, bad2.code]));
+      }
     } catch (e) { check('converter self-test threw', false, e && e.stack || e); }
     finally { try { fs.rmSync(dir, { recursive: true, force: true }); } catch (_) { /* temp */ } }
     return out;

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.0 — Waveframe, part of the Opsis Media Suite (first step)
+- **Video converter** in its own card beside the audio card of the Export / Convert tab, with the same queue/progress/cancel/cleanup engine: presets (YouTube 1080p/4K, small web, H.265 archive, phone/device, WebM VP9, GIF, extract audio), codec (H.264, H.265, VP9, AV1), container, resolution (never upscales), fps, CRF or target bitrate, 1-/2-pass, encoder speed, trim, remove audio, audio track and codec, embedded or burned-in subtitles (own track or external file), size estimate, thumbnail and probe info, output to Videos\Opsis Media Suite (or next to the original / a folder you pick, remembered).
+- **Encoders:** detected with ffmpeg -encoders / -hwaccels; hardware (NVENC, QuickSync, AMF) first, software as automatic fallback; the UI shows what was found and what is missing. The LGPL ffmpeg that Waveframe downloads has no libx264/libx265 (GPL): software H.264 is OpenH264 (bitrate only), H.265 needs a GPU encoder; a user's own ffmpeg on PATH is used as is.
+- Browser capabilities (WebCodecs VideoEncoder.isConfigSupported, MediaRecorder) are detected and shown, not used as the engine yet.
+- Safe command building (argument arrays only), path and range validation, subtitle-path escaping, half-written files removed on error/cancel; IPC validated like every other channel.
+- docs/MEDIA-SUITE.md: architecture and what is NOT done yet. About shows "Part of the Opsis Media Suite". 20 languages, ARIA, layout self-test over 20 languages x 100 % / 150 %, unit + real transcode tests (PATH ffmpeg and the LGPL build).
+- Not done / for 2.1.1: transcoding with Web APIs only (no ffmpeg), real GPU encoding verified on more machines, audio chain (EQ/LUFS) for the audio of a video, Media Player Pro merge, photo tab, product renaming.
+
 ## 2.0.0
 - Update mechanism, same as the Opsis News Crawler: check 30 s after start and every 24 h with ETag; one balloon per version, none while a game / full-screen app / presentation is in front (retry after 15 min); the balloon opens a window with Download and install, Later, Skip this version and What's new; the setup is downloaded from this repository's releases only, verified with SHA-256 (GitHub digest or the .sha256 asset), re-checked by a helper and installed silently, then the app restarts. Nothing unverified is ever run; portable copies and versions without a digest open the release page. All texts in 20 languages (balloon, window, dialogs, FFmpeg download confirmation).
 - Export / Convert layout: every group of controls has its own spacing; layout self-test over 20 languages x 100 % / 150 % with files listed and while converting.

@@ -2,14 +2,17 @@
 
 # Waveframe
 
-**v2.0.0** · Windows 10/11 · MIT · [Releases](../../releases) · [The Opsis family](#η-οικογένεια-opsis--the-opsis-family)
+**v2.1.0** · *Waveframe — μέρος του Opsis Media Suite / part of the Opsis Media Suite* · Windows 10/11 · MIT · [Releases](../../releases) · [The Opsis family](#η-οικογένεια-opsis--the-opsis-family)
 
 <p align="center">
   <img src="docs/img/dark-player.png" alt="Player (dark)" width="48%" />
   <img src="docs/img/light-enhancer.png" alt="Audio enhancer (light)" width="48%" />
 </p>
 <p align="center">
-  <img src="docs/img/dark-export-convert.png" alt="Export / Convert (dark)" width="48%" />
+  <img src="docs/img/dark-export-convert.png" alt="Export / Convert with the video converter (dark)" width="48%" />
+  <img src="docs/img/light-export-convert.png" alt="Export / Convert with the video converter (light)" width="48%" />
+</p>
+<p align="center">
   <img src="docs/img/mini-player.png" alt="Mini player with visualization" width="30%" />
 </p>
 
@@ -32,6 +35,7 @@
 | ▶️ Αναπαραγωγή | Φόρτωση αρχείου/URL/μικροφώνου/test tone, playlist με drag-drop, crossfade, album art & μεταδεδομένα, 20 visualizers |
 | 🎚 Ενισχυτής Ήχου | 10-ζωνών ισοσταθμιστής (sliders ή draggable καμπύλη), Ενίσχυση Μπάσων/Έντασης, 3D Περιβάλλων Ήχος, Compressor/Reverb/Exciter, loudness normalization, master limiter — όλα με master bypass χωρίς απώλεια ρυθμίσεων |
 | 💾 Εξαγωγή / Μετατροπή | Μία καρτέλα για κομμάτια της λίστας και αρχεία ήχου/βίντεο: WAV 16/24/32f, FLAC, MP3 (CBR/VBR), AAC, OGG, Opus, AIFF, ALAC, WMA· έτοιμες ποιότητες, περικοπή, ρυθμός δειγματοληψίας, κανάλια, κανονικοποίηση LUFS (BS.1770), εφαρμογή ισοσταθμιστή/εφέ, batch με ακύρωση. Αποθήκευση από προεπιλογή στο `Μουσική\WaveFrame` (ή αλλού). Το πρωτότυπο δεν αλλάζει ποτέ |
+| 🎞 Μετατροπέας βίντεο | Δική του κάρτα δίπλα στον ήχο: προρρυθμίσεις (YouTube 1080p/4K, μικρό web, αρχειοθέτηση H.265, τηλέφωνο, WebM, GIF, εξαγωγή ήχου), κωδικοποιητές H.264/H.265/VP9/AV1 με αυτόματη επιλογή του καλύτερου (GPU πρώτα, λογισμικό ως εφεδρεία), CRF ή bitrate, 1-/2-pass, κοπή, ήχος/υπότιτλοι (ενσωμάτωση ή burn-in), ουρά με πρόοδο και ακύρωση, πρόβλεψη μεγέθους. Αποθήκευση στο `Βίντεο\Opsis Media Suite` |
 | 🎨 Εμφάνιση | 20 θέματα (skins), 10 κινούμενα φόντα, 20 visualizers, 2 διατάξεις παραθύρου (Modern/Classic), custom accent color, mini/compact always-on-top mode |
 | 🌐 Γλώσσες | Πλήρης διεπαφή σε 20 γλώσσες (Ελληνικά, Αγγλικά, Γαλλικά, Γερμανικά, Ισπανικά, Ιταλικά, Πορτογαλικά, Ρωσικά, Τουρκικά, Πολωνικά, Ολλανδικά, Σουηδικά, Δανικά, Νορβηγικά, Φινλανδικά, Τσεχικά, Σλοβακικά, Ουγγρικά, Ρουμανικά, Ουκρανικά) |
 | 🖥 Windows integration | SMTC (έλεγχος από lock screen/ακουστικά Bluetooth), taskbar thumbbar & jump list, συσχέτιση αρχείων ήχου, auto-launch on login, toast ειδοποιήσεις αλλαγής κομματιού |
@@ -47,7 +51,7 @@
 
 #### Επαλήθευση λήψης (SHA-256)
 
-Κάθε αρχείο του release συνοδεύεται από αρχείο `.sha256`. Στο PowerShell: `(Get-FileHash .\Waveframe.Setup.2.0.0.exe -Algorithm SHA256).Hash` και σύγκρινε με το περιεχόμενο του `Waveframe.Setup.2.0.0.exe.sha256`. **Απαιτήσεις:** Windows 10/11 x64· η εγκατάσταση γίνεται στο Program Files (ζητά δικαιώματα διαχειριστή). Ενημερώσεις: ειδοποίηση νέας έκδοσης με «Λήψη και εγκατάσταση» (SHA-256, σιωπηλή εγκατάσταση).
+Κάθε αρχείο του release συνοδεύεται από αρχείο `.sha256`. Στο PowerShell: `(Get-FileHash .\Waveframe.Setup.2.1.0.exe -Algorithm SHA256).Hash` και σύγκρινε με το περιεχόμενο του `Waveframe.Setup.2.1.0.exe.sha256`. **Απαιτήσεις:** Windows 10/11 x64· η εγκατάσταση γίνεται στο Program Files (ζητά δικαιώματα διαχειριστή). Ενημερώσεις: ειδοποίηση νέας έκδοσης με «Λήψη και εγκατάσταση» (SHA-256, σιωπηλή εγκατάσταση).
 
 ### Χτίσιμο από τον πηγαίο κώδικα
 
@@ -77,6 +81,7 @@ Waveframe is a free, real-time audio enhancer and media player for Windows 10/11
 | ▶️ Playback | File/URL/microphone/test-tone input, drag-drop playlist, crossfade, album art & metadata, 20 visualizers |
 | 🎚 Audio Enhancer | 10-band equalizer (sliders or a draggable curve), Bass/Volume Boost, 3D Surround, Compressor/Reverb/Exciter, loudness normalization, master limiter — all with a master bypass that never loses your settings |
 | 💾 Export / Convert | One tab for playlist tracks and audio/video files: WAV 16/24/32f, FLAC, MP3 (CBR/VBR), AAC, OGG, Opus, AIFF, ALAC, WMA; quality presets, trim, sample rate, channels, LUFS normalisation (BS.1770), optional equalizer/effects, batch with cancel. Saved to `Music\WaveFrame` by default (or any folder). The original is never changed |
+| 🎞 Video converter | Its own card beside the audio card: presets (YouTube 1080p/4K, small web, H.265 archive, phone, WebM, GIF, extract audio), H.264/H.265/VP9/AV1 with the best available encoder chosen automatically (GPU first, software fallback), CRF or bitrate, 1-/2-pass, trim, audio/subtitles (embed or burn-in), queue with progress and cancel, size estimate. Saved to `Videos\Opsis Media Suite` |
 | 🎨 Appearance | 20 skins, 10 animated backgrounds, 20 visualizers, 2 window layouts (Modern/Classic), custom accent color, mini/compact always-on-top mode |
 | 🌐 Languages | Full interface in 20 languages (Greek, English, French, German, Spanish, Italian, Portuguese, Russian, Turkish, Polish, Dutch, Swedish, Danish, Norwegian, Finnish, Czech, Slovak, Hungarian, Romanian, Ukrainian) |
 | 🖥 Windows integration | SMTC (lock screen / Bluetooth headset controls), taskbar thumbbar & jump list, audio file associations, auto-launch on login, track-change toast notifications |
@@ -92,7 +97,7 @@ The app needs an FFmpeg (LGPL build) for exporting; if one isn't already on your
 
 #### Verify your download (SHA-256)
 
-Every release file has a matching `.sha256` file. In PowerShell: `(Get-FileHash .\Waveframe.Setup.2.0.0.exe -Algorithm SHA256).Hash` and compare it with the contents of `Waveframe.Setup.2.0.0.exe.sha256`. **Requirements:** Windows 10/11 x64; installs to Program Files (asks for administrator rights). Updates: new-version notification with "Download and install" (SHA-256, silent install).
+Every release file has a matching `.sha256` file. In PowerShell: `(Get-FileHash .\Waveframe.Setup.2.1.0.exe -Algorithm SHA256).Hash` and compare it with the contents of `Waveframe.Setup.2.1.0.exe.sha256`. **Requirements:** Windows 10/11 x64; installs to Program Files (asks for administrator rights). Updates: new-version notification with "Download and install" (SHA-256, silent install).
 
 ### Building from source
 
@@ -110,6 +115,10 @@ npm run dist        # produces a portable build + NSIS installer (Windows x64) i
 - `build/` — per-language EULA files for the installer
 - `WAVEFRAME_ROADMAP.md` / `WAVEFRAME_QA_CHECKLIST.md` — phase-by-phase development history and QA checklist
 
+## Opsis Media Suite
+
+Το Waveframe είναι το πρώτο βήμα του **Opsis Media Suite**: αρχιτεκτονική, κοινά στοιχεία και τι δεν γίνεται ακόμη στο [docs/MEDIA-SUITE.md](docs/MEDIA-SUITE.md). *Waveframe is the first step of the Opsis Media Suite; see [docs/MEDIA-SUITE.md](docs/MEDIA-SUITE.md) for the architecture and what is not done yet.*
+
 ## Η οικογένεια Opsis / The Opsis family
 
 Από το Waveframe (Ρυθμίσεις → Σχετικά → «Η οικογένεια Opsis») βλέπεις τις άλλες εφαρμογές του ίδιου δημιουργού: [Opsis](https://github.com/giorstergiopoulos-design/Opsis), [Opsis News Crawler](https://github.com/giorstergiopoulos-design/OpsisNewsCrawler), [Opsis Appearance](https://github.com/giorstergiopoulos-design/OpsisAppearance), [GearWin](https://github.com/giorstergiopoulos-design/GearWin), [Opsis Media Player Pro](https://github.com/giorstergiopoulos-design/OpsisMediaPlayerPro), [Kombos](https://github.com/giorstergiopoulos-design/Kombos).
@@ -124,7 +133,7 @@ npm run dist        # produces a portable build + NSIS installer (Windows x64) i
 
 ## Τρίτα μέρη / Third-party
 
-- **FFmpeg** (LGPL-2.1+/3, build της BtbN «win64-lgpl»): το Waveframe **δεν** το συμπεριλαμβάνει στον installer. Χρησιμοποιεί ffmpeg που υπάρχει ήδη στο PATH, αλλιώς το κατεβάζει μία φορά **μετά από επιβεβαίωσή σου** από https://github.com/BtbN/FFmpeg-Builds (έλεγχος SHA-256 από το release). Πηγαίος κώδικας: https://ffmpeg.org και το αποθετήριο της BtbN. Αν έχεις δικό σου ffmpeg στο PATH (π.χ. GPL build), ισχύει η άδειά του.
+- **FFmpeg** (LGPL-2.1+/3, build της BtbN «win64-lgpl», χωρίς libx264/libx265 — H.264 λογισμικού: OpenH264 BSD): το Waveframe **δεν** το συμπεριλαμβάνει στον installer. Χρησιμοποιεί ffmpeg που υπάρχει ήδη στο PATH, αλλιώς το κατεβάζει μία φορά **μετά από επιβεβαίωσή σου** από https://github.com/BtbN/FFmpeg-Builds (έλεγχος SHA-256 από το release). Πηγαίος κώδικας: https://ffmpeg.org και το αποθετήριο της BtbN. Αν έχεις δικό σου ffmpeg στο PATH (π.χ. GPL build), ισχύει η άδειά του.
 - **FFmpeg** (LGPL build by BtbN): **not** bundled in the installer. Waveframe uses an ffmpeg already on PATH, otherwise downloads the LGPL build once **after you confirm** from https://github.com/BtbN/FFmpeg-Builds (SHA-256 checked against the release). Source: https://ffmpeg.org and the BtbN repository. If you put your own ffmpeg on PATH (e.g. a GPL build) its own licence applies.
 - Electron (MIT), music-metadata (MIT), adm-zip (MIT).
 

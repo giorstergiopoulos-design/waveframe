@@ -28,7 +28,7 @@ test('placeholders ({n}, {v}, {why} ...) are identical in every language', () =>
 });
 
 test('new 1.7-1.9 texts are really translated: no language except English repeats the English long text', () => {
-  const newKeys = Object.keys(I18N.en).filter((k) => /^(splash|conv|upd|dl|ff)\./.test(k) && I18N.en[k].length >= 30);
+  const newKeys = Object.keys(I18N.en).filter((k) => /^(splash|conv|upd|dl|ff|vid)\./.test(k) && I18N.en[k].length >= 30);
   for (const l of LANGS.filter((x) => x !== 'en')) {
     const same = newKeys.filter((k) => I18N[l][k] === I18N.en[k]);
     assert.deepEqual(same, [], `${l}: English leftovers`);
@@ -38,7 +38,7 @@ test('new 1.7-1.9 texts are really translated: no language except English repeat
 test('no raw keys or stray Greek in the Latin/Cyrillic languages for the new texts', () => {
   const greek = /[Ͱ-Ͽ]/;
   for (const l of LANGS.filter((x) => x !== 'el')) {
-    for (const k of Object.keys(I18N.en).filter((x) => /^(splash|conv|upd|dl|ff|settings\.(suite|notify|openFamily|openWelcome)|tab\.converter)/.test(x))) {
+    for (const k of Object.keys(I18N.en).filter((x) => /^(splash|conv|upd|dl|ff|vid|settings\.(suite|notify|openFamily|openWelcome|aboutSuite)|tab\.converter)/.test(x))) {
       assert.ok(!greek.test(I18N[l][k]), `${l}:${k} contains Greek`);
       assert.ok(I18N[l][k] !== k && !/^(splash|conv|settings|tab)\.[\w.]+$/.test(I18N[l][k]), `${l}:${k} looks like a raw key`);
     }
@@ -47,7 +47,7 @@ test('no raw keys or stray Greek in the Latin/Cyrillic languages for the new tex
 
 test('every key referenced by the code exists in the Greek reference', () => {
   const used = new Set();
-  for (const f of ['app.js', 'converter.js', 'splash.js', 'index.html']) {
+  for (const f of ['app.js', 'converter.js', 'splash.js', 'video.js', 'index.html']) {
     const s = fs.readFileSync(path.join(root, f), 'utf8');
     for (const m of s.matchAll(/data-i18n(?:-title)?="([\w.]+)"/g)) used.add(m[1]);
     for (const m of s.matchAll(/\bt\(\s*['"]([\w.]+)['"]/g)) used.add(m[1]);
@@ -57,6 +57,9 @@ test('every key referenced by the code exists in the Greek reference', () => {
   for (let i = 1; i <= 6; i++) for (const s of ['title', 'intro', 'l']) used.add(`splash.p${i}.${s}`);
   for (const s of ['wait', 'work', 'done', 'cancelled']) used.add(`conv.st.${s}`);
   for (const s of ['low', 'medium', 'high', 'lossless']) used.add(`conv.preset.${s}`);
+  for (const s of ['youtube1080', 'youtube4k', 'webSmall', 'archiveH265', 'device', 'webm', 'gif', 'audioOnly']) used.add(`vid.preset.${s}`);
+  for (const s of ['veryfast', 'fast', 'medium', 'slow', 'veryslow']) used.add(`vid.speed.${s}`);
+  for (const s of ['copy', 'aac', 'opus', 'mp3', 'flac']) used.add(`vid.audio.${s}`);
   const missing = [...used].filter((k) => !(k in I18N.el) && !k.includes('$'));
   assert.deepEqual(missing, []);
 });

@@ -159,7 +159,8 @@
     const outMode = localStorage.getItem('waveframe.destMode') || (customDir ? 'custom' : 'default');
     root.textContent = '';
     const panel = h('div', { class: 'panel conv-panel' });
-    panel.append(h('h2', { 'data-i18n': 'conv.title', text: t('conv.title') }), h('p', { class: 'hint', 'data-i18n': 'conv.hint', text: t('conv.hint') }));
+    panel.setAttribute('aria-labelledby', 'convTitle');
+    panel.append(h('h2', { id: 'convTitle', 'data-i18n': 'conv.title', text: t('conv.title') }), h('p', { class: 'hint', 'data-i18n': 'conv.hint', text: t('conv.hint') }));
 
     const drop = h('div', { class: 'conv-drop', id: 'convDrop', tabIndex: 0 }, [h('span', { 'data-i18n': 'conv.drop', text: t('conv.drop') })]);
     const list = h('div', { class: 'conv-list', id: 'convList' });
@@ -203,7 +204,9 @@
     const bCancel = h('button', { class: 'small-btn dep-hidden', id: 'convCancel', 'data-i18n': 'conv.cancel', text: t('conv.cancel') });
     const track = h('div', { class: 'progress-track dep-hidden', id: 'convTrack' }, [h('div', { class: 'progress-fill', id: 'convFill' })]);
     panel.append(bStart, bCancel, track, h('p', { class: 'export-status', id: 'convStatus', role: 'status' }));
-    root.append(panel);
+    // the audio card and the video card (video.js) sit side by side when there is room, stacked otherwise
+    root.append(h('div', { class: 'conv-cols', id: 'convCols' }, [panel]));
+    document.dispatchEvent(new Event('waveframe:converter-built'));
 
     const syncVisibility = () => {
       const spec = C.FORMATS[formatSel.value];

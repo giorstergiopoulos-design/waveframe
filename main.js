@@ -483,6 +483,7 @@ if (!gotSingleInstanceLock) {
     converterApi = converter.init({
       getMainWin: () => mainWin, resolveFfmpegPath, installFfmpeg, confirmFfmpegDownload,
       // default place for every encode: Windows Music folder > WaveFrame (created automatically)
+      defaultVideoOutDir: () => { const d = path.join(app.getPath('videos'), 'Opsis Media Suite'); fs.mkdirSync(d, { recursive: true }); return d; },
       defaultOutDir: () => { const d = path.join(app.getPath('music'), 'WaveFrame'); fs.mkdirSync(d, { recursive: true }); return d; },
     });
     createWindow();

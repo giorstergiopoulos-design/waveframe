@@ -777,7 +777,7 @@ let converterLoading = null;
 function loadConverter() {
   if (converterLoading) return converterLoading;
   const load = (src) => new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
-  converterLoading = load('convlib.js').then(() => load('converter.js')).catch((e) => { converterLoading = null; throw e; });
+  converterLoading = load('convlib.js').then(() => load('vidlib.js')).then(() => load('converter.js')).then(() => load('video.js')).catch((e) => { converterLoading = null; throw e; });
   return converterLoading;
 }
 

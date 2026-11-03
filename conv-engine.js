@@ -16,7 +16,8 @@ function runFfmpeg(ffmpegPath, args, { duration = 0, onProgress } = {}) {
   const promise = new Promise((resolve, reject) => {
     let tail = '';
     try { child = spawn(ffmpegPath, args, { windowsHide: true }); } catch (e) { return reject(e); }
-    child.stdout.on('data', () => {});
+    let outTail = '';
+    child.stdout.on('data', (c) => { outTail = (outTail + c.toString()).slice(-6000); });
     child.stderr.on('data', (c) => {
       const s = c.toString();
       tail = (tail + s).slice(-6000);
@@ -26,7 +27,7 @@ function runFfmpeg(ffmpegPath, args, { duration = 0, onProgress } = {}) {
     child.on('error', reject);
     child.on('close', (code) => {
       if (cancelled) return reject(Object.assign(new Error('cancelled'), { code: 'cancelled' }));
-      resolve({ code, stderr: tail });
+      resolve({ code, stderr: tail, stdout: outTail });
     });
   });
   return { promise, cancel() { cancelled = true; if (child) try { child.kill(); } catch (_) { /* gone */ } } };
