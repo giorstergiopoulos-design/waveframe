@@ -1,8 +1,8 @@
-<p align="center"><img src="docs/img/icon.png" alt="Waveframe" width="96" /></p>
+<p align="center"><img src="docs/img/icon.png" alt="Opsis Media Suite" width="96" /></p>
 
-# Waveframe
+# Opsis Media Suite
 
-**v2.1.0** · *Waveframe — μέρος του Opsis Media Suite / part of the Opsis Media Suite* · Windows 10/11 · MIT · [Releases](../../releases) · [The Opsis family](#η-οικογένεια-opsis--the-opsis-family)
+**v2.2.0** · *πρώην Opsis Media Suite / formerly Opsis Media Suite* · Windows 10/11 · MIT · [Releases](../../releases) · [The Opsis family](#η-οικογένεια-opsis--the-opsis-family)
 
 <p align="center">
   <img src="docs/img/dark-player.png" alt="Player (dark)" width="48%" />
@@ -34,7 +34,7 @@
 |---|---|
 | ▶️ Αναπαραγωγή | Φόρτωση αρχείου/URL/μικροφώνου/test tone, playlist με drag-drop, crossfade, album art & μεταδεδομένα, 20 visualizers |
 | 🎚 Ενισχυτής Ήχου | 10-ζωνών ισοσταθμιστής (sliders ή draggable καμπύλη), Ενίσχυση Μπάσων/Έντασης, 3D Περιβάλλων Ήχος, Compressor/Reverb/Exciter, loudness normalization, master limiter — όλα με master bypass χωρίς απώλεια ρυθμίσεων |
-| 💾 Εξαγωγή / Μετατροπή | Μία καρτέλα για κομμάτια της λίστας και αρχεία ήχου/βίντεο: WAV 16/24/32f, FLAC, MP3 (CBR/VBR), AAC, OGG, Opus, AIFF, ALAC, WMA· έτοιμες ποιότητες, περικοπή, ρυθμός δειγματοληψίας, κανάλια, κανονικοποίηση LUFS (BS.1770), εφαρμογή ισοσταθμιστή/εφέ, batch με ακύρωση. Αποθήκευση από προεπιλογή στο `Μουσική\WaveFrame` (ή αλλού). Το πρωτότυπο δεν αλλάζει ποτέ |
+| 💾 Εξαγωγή / Μετατροπή | Μία καρτέλα για κομμάτια της λίστας και αρχεία ήχου/βίντεο: WAV 16/24/32f, FLAC, MP3 (CBR/VBR), AAC, OGG, Opus, AIFF, ALAC, WMA· έτοιμες ποιότητες, περικοπή, ρυθμός δειγματοληψίας, κανάλια, κανονικοποίηση LUFS (BS.1770), εφαρμογή ισοσταθμιστή/εφέ, batch με ακύρωση. Αποθήκευση από προεπιλογή στο `Μουσική\Opsis Media Suite` (ή αλλού). Το πρωτότυπο δεν αλλάζει ποτέ |
 | 🎞 Μετατροπέας βίντεο | Δική του κάρτα δίπλα στον ήχο: προρρυθμίσεις (YouTube 1080p/4K, μικρό web, αρχειοθέτηση H.265, τηλέφωνο, WebM, GIF, εξαγωγή ήχου), κωδικοποιητές H.264/H.265/VP9/AV1 με αυτόματη επιλογή του καλύτερου (GPU πρώτα, λογισμικό ως εφεδρεία), CRF ή bitrate, 1-/2-pass, κοπή, ήχος/υπότιτλοι (ενσωμάτωση ή burn-in), ουρά με πρόοδο και ακύρωση, πρόβλεψη μεγέθους. Αποθήκευση στο `Βίντεο\Opsis Media Suite` |
 | 🎨 Εμφάνιση | 20 θέματα (skins), 10 κινούμενα φόντα, 20 visualizers, 2 διατάξεις παραθύρου (Modern/Classic), custom accent color, mini/compact always-on-top mode |
 | 🌐 Γλώσσες | Πλήρης διεπαφή σε 20 γλώσσες (Ελληνικά, Αγγλικά, Γαλλικά, Γερμανικά, Ισπανικά, Ιταλικά, Πορτογαλικά, Ρωσικά, Τουρκικά, Πολωνικά, Ολλανδικά, Σουηδικά, Δανικά, Νορβηγικά, Φινλανδικά, Τσεχικά, Σλοβακικά, Ουγγρικά, Ρουμανικά, Ουκρανικά) |
@@ -45,13 +45,13 @@
 
 ### Εγκατάσταση
 
-Κατέβασε το τελευταίο `Waveframe.Setup.*.exe` (Inno Setup, εγκατάσταση χωρίς δικαιώματα διαχειριστή) από τα [Releases](../../releases) και εκτέλεσέ το — ο οδηγός εγκατάστασης υποστηρίζει επιλογή γλώσσας/φακέλου εγκατάστασης και δημιουργεί συντομεύσεις επιφάνειας εργασίας/μενού Έναρξης. Υπάρχει επίσης μια φορητή (portable) έκδοση `Waveframe-*.exe` που δεν απαιτεί εγκατάσταση.
+Κατέβασε το τελευταίο `OpsisMediaSuite-Setup-*.exe` (Inno Setup, εγκατάσταση χωρίς δικαιώματα διαχειριστή) από τα [Releases](../../releases) και εκτέλεσέ το — ο οδηγός εγκατάστασης υποστηρίζει επιλογή γλώσσας/φακέλου εγκατάστασης και δημιουργεί συντομεύσεις επιφάνειας εργασίας/μενού Έναρξης. Υπάρχει επίσης μια φορητή (portable) έκδοση `OpsisMediaSuite-*.exe` που δεν απαιτεί εγκατάσταση.
 
 Η εφαρμογή χρειάζεται ένα FFmpeg (LGPL build) για την εξαγωγή αρχείων· αν δεν υπάρχει ήδη στο σύστημα, το κατεβάζει μόνη της από τις Ρυθμίσεις → Dependencies με ένα κλικ.
 
 #### Επαλήθευση λήψης (SHA-256)
 
-Κάθε αρχείο του release συνοδεύεται από αρχείο `.sha256`. Στο PowerShell: `(Get-FileHash .\Waveframe.Setup.2.1.0.exe -Algorithm SHA256).Hash` και σύγκρινε με το περιεχόμενο του `Waveframe.Setup.2.1.0.exe.sha256`. **Απαιτήσεις:** Windows 10/11 x64· η εγκατάσταση γίνεται στο Program Files (ζητά δικαιώματα διαχειριστή). Ενημερώσεις: ειδοποίηση νέας έκδοσης με «Λήψη και εγκατάσταση» (SHA-256, σιωπηλή εγκατάσταση).
+Κάθε αρχείο του release συνοδεύεται από αρχείο `.sha256`. Στο PowerShell: `(Get-FileHash .\OpsisMediaSuite-Setup-2.2.0.exe -Algorithm SHA256).Hash` και σύγκρινε με το περιεχόμενο του `OpsisMediaSuite-Setup-2.2.0.exe.sha256`. **Απαιτήσεις:** Windows 10/11 x64· η εγκατάσταση γίνεται στο Program Files (ζητά δικαιώματα διαχειριστή). Ενημερώσεις: ειδοποίηση νέας έκδοσης με «Λήψη και εγκατάσταση» (SHA-256, σιωπηλή εγκατάσταση).
 
 ### Χτίσιμο από τον πηγαίο κώδικα
 
@@ -60,7 +60,7 @@ npm install
 npm start          # εκκίνηση σε dev mode
 npm run smoke-test # αυτοματοποιημένος έλεγχος εκκίνησης χωρίς σφάλματα
 npm run dist        # παράγει portable + win-unpacked (Windows x64) στο release/
-# Inno Setup installer (απαιτεί Inno Setup 7): ISCC.exe /DMyAppVersion=1.7.0 installerWaveframe.iss
+# Inno Setup installer (απαιτεί Inno Setup 7): ISCC.exe /DMyAppVersion=2.2.0 installerOpsisMediaSuite.iss
 ```
 
 ### Δομή αποθετηρίου
@@ -72,7 +72,7 @@ npm run dist        # παράγει portable + win-unpacked (Windows x64) στ�
 
 ## English
 
-Waveframe is a free, real-time audio enhancer and media player for Windows 10/11, built from scratch with Electron and the browser's native Web Audio API — no external DSP engine. It loads local files, URLs, or your microphone, runs the audio through a full real-time enhancement chain (equalizer, bass boost, 3D surround, compressor, reverb, exciter, loudness normalization, limiter), and can export the result to 7 file formats via FFmpeg.
+Opsis Media Suite is a free, real-time audio enhancer and media player for Windows 10/11, built from scratch with Electron and the browser's native Web Audio API — no external DSP engine. It loads local files, URLs, or your microphone, runs the audio through a full real-time enhancement chain (equalizer, bass boost, 3D surround, compressor, reverb, exciter, loudness normalization, limiter), and can export the result to 7 file formats via FFmpeg.
 
 ### Features
 
@@ -80,7 +80,7 @@ Waveframe is a free, real-time audio enhancer and media player for Windows 10/11
 |---|---|
 | ▶️ Playback | File/URL/microphone/test-tone input, drag-drop playlist, crossfade, album art & metadata, 20 visualizers |
 | 🎚 Audio Enhancer | 10-band equalizer (sliders or a draggable curve), Bass/Volume Boost, 3D Surround, Compressor/Reverb/Exciter, loudness normalization, master limiter — all with a master bypass that never loses your settings |
-| 💾 Export / Convert | One tab for playlist tracks and audio/video files: WAV 16/24/32f, FLAC, MP3 (CBR/VBR), AAC, OGG, Opus, AIFF, ALAC, WMA; quality presets, trim, sample rate, channels, LUFS normalisation (BS.1770), optional equalizer/effects, batch with cancel. Saved to `Music\WaveFrame` by default (or any folder). The original is never changed |
+| 💾 Export / Convert | One tab for playlist tracks and audio/video files: WAV 16/24/32f, FLAC, MP3 (CBR/VBR), AAC, OGG, Opus, AIFF, ALAC, WMA; quality presets, trim, sample rate, channels, LUFS normalisation (BS.1770), optional equalizer/effects, batch with cancel. Saved to `Music\Opsis Media Suite` by default (or any folder). The original is never changed |
 | 🎞 Video converter | Its own card beside the audio card: presets (YouTube 1080p/4K, small web, H.265 archive, phone, WebM, GIF, extract audio), H.264/H.265/VP9/AV1 with the best available encoder chosen automatically (GPU first, software fallback), CRF or bitrate, 1-/2-pass, trim, audio/subtitles (embed or burn-in), queue with progress and cancel, size estimate. Saved to `Videos\Opsis Media Suite` |
 | 🎨 Appearance | 20 skins, 10 animated backgrounds, 20 visualizers, 2 window layouts (Modern/Classic), custom accent color, mini/compact always-on-top mode |
 | 🌐 Languages | Full interface in 20 languages (Greek, English, French, German, Spanish, Italian, Portuguese, Russian, Turkish, Polish, Dutch, Swedish, Danish, Norwegian, Finnish, Czech, Slovak, Hungarian, Romanian, Ukrainian) |
@@ -91,13 +91,13 @@ Waveframe is a free, real-time audio enhancer and media player for Windows 10/11
 
 ### Installation
 
-Download the latest `Waveframe.Setup.*.exe` (Inno Setup, per-user, no admin rights) from [Releases](../../releases) and run it — the installer wizard supports choosing a language/install folder and creates desktop/Start Menu shortcuts. A portable `Waveframe-*.exe` build that needs no installation is also provided.
+Download the latest `OpsisMediaSuite-Setup-*.exe` (Inno Setup, per-user, no admin rights) from [Releases](../../releases) and run it — the installer wizard supports choosing a language/install folder and creates desktop/Start Menu shortcuts. A portable `OpsisMediaSuite-*.exe` build that needs no installation is also provided.
 
 The app needs an FFmpeg (LGPL build) for exporting; if one isn't already on your system, it can download it itself from Settings → Dependencies with one click.
 
 #### Verify your download (SHA-256)
 
-Every release file has a matching `.sha256` file. In PowerShell: `(Get-FileHash .\Waveframe.Setup.2.1.0.exe -Algorithm SHA256).Hash` and compare it with the contents of `Waveframe.Setup.2.1.0.exe.sha256`. **Requirements:** Windows 10/11 x64; installs to Program Files (asks for administrator rights). Updates: new-version notification with "Download and install" (SHA-256, silent install).
+Every release file has a matching `.sha256` file. In PowerShell: `(Get-FileHash .\OpsisMediaSuite-Setup-2.2.0.exe -Algorithm SHA256).Hash` and compare it with the contents of `OpsisMediaSuite-Setup-2.2.0.exe.sha256`. **Requirements:** Windows 10/11 x64; installs to Program Files (asks for administrator rights). Updates: new-version notification with "Download and install" (SHA-256, silent install).
 
 ### Building from source
 
@@ -117,30 +117,30 @@ npm run dist        # produces a portable build + NSIS installer (Windows x64) i
 
 ## Opsis Media Suite
 
-Το Waveframe είναι το πρώτο βήμα του **Opsis Media Suite**: αρχιτεκτονική, κοινά στοιχεία και τι δεν γίνεται ακόμη στο [docs/MEDIA-SUITE.md](docs/MEDIA-SUITE.md). *Waveframe is the first step of the Opsis Media Suite; see [docs/MEDIA-SUITE.md](docs/MEDIA-SUITE.md) for the architecture and what is not done yet.*
+Το **Opsis Media Suite** (πρώην Opsis Media Suite) είναι ο κορμός της σουίτας: αρχιτεκτονική, κοινά στοιχεία και τι δεν γίνεται ακόμη στο [docs/MEDIA-SUITE.md](docs/MEDIA-SUITE.md). *Opsis Media Suite (formerly Opsis Media Suite) is the core of the suite; see [docs/MEDIA-SUITE.md](docs/MEDIA-SUITE.md) for the architecture and what is not done yet.*
 
 ## Η οικογένεια Opsis / The Opsis family
 
-Από το Waveframe (Ρυθμίσεις → Σχετικά → «Η οικογένεια Opsis») βλέπεις τις άλλες εφαρμογές του ίδιου δημιουργού: [Opsis](https://github.com/giorstergiopoulos-design/Opsis), [Opsis News Crawler](https://github.com/giorstergiopoulos-design/OpsisNewsCrawler), [Opsis Appearance](https://github.com/giorstergiopoulos-design/OpsisAppearance), [GearWin](https://github.com/giorstergiopoulos-design/GearWin), [Opsis Media Player Pro](https://github.com/giorstergiopoulos-design/OpsisMediaPlayerPro), [Kombos](https://github.com/giorstergiopoulos-design/Kombos).
+Από το Opsis Media Suite (Ρυθμίσεις → Σχετικά → «Η οικογένεια Opsis») βλέπεις τις άλλες εφαρμογές του ίδιου δημιουργού: [Opsis](https://github.com/giorstergiopoulos-design/Opsis), [Opsis News Crawler](https://github.com/giorstergiopoulos-design/OpsisNewsCrawler), [Opsis Appearance](https://github.com/giorstergiopoulos-design/OpsisAppearance), [GearWin](https://github.com/giorstergiopoulos-design/GearWin), [Opsis Media Player Pro](https://github.com/giorstergiopoulos-design/OpsisMediaPlayerPro), [Kombos](https://github.com/giorstergiopoulos-design/Kombos).
 
-*From Waveframe (Settings → About → "The Opsis family") you can browse the author's other apps, listed above.*
+*From Opsis Media Suite (Settings → About → "The Opsis family") you can browse the author's other apps, listed above.*
 
 ## Απόρρητο / Privacy
 
-**Ελληνικά:** Το Waveframe δεν στέλνει τηλεμετρία. Οι μόνες συνδέσεις στο διαδίκτυο είναι αιτήματα GET προς το GitHub: (1) έλεγχος του τελευταίου release (`api.github.com`, το πολύ μία φορά την ημέρα, με ETag), που απενεργοποιείται από Ρυθμίσεις → Ειδοποίηση για νέες εκδόσεις· (2) η λίστα εφαρμογών της οικογένειας (`raw.githubusercontent.com`, το πολύ μία φορά την ημέρα, με ενσωματωμένο αντίγραφο εφεδρείας) και τα releases των εφαρμογών όταν ανοίξεις το παράθυρο «Η οικογένεια Opsis»· (3) λήψη εγκαταστάτη μόνο αν το επιβεβαιώσεις. Η λήψη επαληθεύεται με SHA-256 και ποτέ δεν εκτελείται αυτόματα. Δεν γίνεται αυτόματη εγκατάσταση ενημερώσεων.
+**Ελληνικά:** Το Opsis Media Suite δεν στέλνει τηλεμετρία. Οι μόνες συνδέσεις στο διαδίκτυο είναι αιτήματα GET προς το GitHub: (1) έλεγχος του τελευταίου release (`api.github.com`, το πολύ μία φορά την ημέρα, με ETag), που απενεργοποιείται από Ρυθμίσεις → Ειδοποίηση για νέες εκδόσεις· (2) η λίστα εφαρμογών της οικογένειας (`raw.githubusercontent.com`, το πολύ μία φορά την ημέρα, με ενσωματωμένο αντίγραφο εφεδρείας) και τα releases των εφαρμογών όταν ανοίξεις το παράθυρο «Η οικογένεια Opsis»· (3) λήψη εγκαταστάτη μόνο αν το επιβεβαιώσεις. Η λήψη επαληθεύεται με SHA-256 και ποτέ δεν εκτελείται αυτόματα. Δεν γίνεται αυτόματη εγκατάσταση ενημερώσεων.
 
-**English:** Waveframe sends no telemetry. The only network requests are GETs to GitHub: (1) the latest-release check (`api.github.com`, at most once a day, using ETag), which you can switch off in Settings → Notify about new versions; (2) the app-family list (`raw.githubusercontent.com`, at most once a day, with a built-in fallback copy) and the apps' releases when you open “The Opsis family”; (3) an installer download only if you confirm it. Downloads are verified with SHA-256 and never run automatically. Updates are never installed automatically.
+**English:** Opsis Media Suite sends no telemetry. The only network requests are GETs to GitHub: (1) the latest-release check (`api.github.com`, at most once a day, using ETag), which you can switch off in Settings → Notify about new versions; (2) the app-family list (`raw.githubusercontent.com`, at most once a day, with a built-in fallback copy) and the apps' releases when you open “The Opsis family”; (3) an installer download only if you confirm it. Downloads are verified with SHA-256 and never run automatically. Updates are never installed automatically.
 
 ## Τρίτα μέρη / Third-party
 
-- **FFmpeg** (LGPL-2.1+/3, build της BtbN «win64-lgpl», χωρίς libx264/libx265 — H.264 λογισμικού: OpenH264 BSD): το Waveframe **δεν** το συμπεριλαμβάνει στον installer. Χρησιμοποιεί ffmpeg που υπάρχει ήδη στο PATH, αλλιώς το κατεβάζει μία φορά **μετά από επιβεβαίωσή σου** από https://github.com/BtbN/FFmpeg-Builds (έλεγχος SHA-256 από το release). Πηγαίος κώδικας: https://ffmpeg.org και το αποθετήριο της BtbN. Αν έχεις δικό σου ffmpeg στο PATH (π.χ. GPL build), ισχύει η άδειά του.
-- **FFmpeg** (LGPL build by BtbN): **not** bundled in the installer. Waveframe uses an ffmpeg already on PATH, otherwise downloads the LGPL build once **after you confirm** from https://github.com/BtbN/FFmpeg-Builds (SHA-256 checked against the release). Source: https://ffmpeg.org and the BtbN repository. If you put your own ffmpeg on PATH (e.g. a GPL build) its own licence applies.
+- **FFmpeg** (LGPL-2.1+/3, build της BtbN «win64-lgpl», χωρίς libx264/libx265 — H.264 λογισμικού: OpenH264 BSD): το Opsis Media Suite **δεν** το συμπεριλαμβάνει στον installer. Χρησιμοποιεί ffmpeg που υπάρχει ήδη στο PATH, αλλιώς το κατεβάζει μία φορά **μετά από επιβεβαίωσή σου** από https://github.com/BtbN/FFmpeg-Builds (έλεγχος SHA-256 από το release). Πηγαίος κώδικας: https://ffmpeg.org και το αποθετήριο της BtbN. Αν έχεις δικό σου ffmpeg στο PATH (π.χ. GPL build), ισχύει η άδειά του.
+- **FFmpeg** (LGPL build by BtbN): **not** bundled in the installer. Opsis Media Suite uses an ffmpeg already on PATH, otherwise downloads the LGPL build once **after you confirm** from https://github.com/BtbN/FFmpeg-Builds (SHA-256 checked against the release). Source: https://ffmpeg.org and the BtbN repository. If you put your own ffmpeg on PATH (e.g. a GPL build) its own licence applies.
 - Electron (MIT), music-metadata (MIT), adm-zip (MIT).
 
 ## Άδεια / License
 
-Το Waveframe διανέμεται με την **άδεια MIT** (βλ. [LICENSE](LICENSE)). Τα πλήρη κείμενα των αδειών των τρίτων στοιχείων (Electron/Chromium, music-metadata, adm-zip: MIT· FFmpeg: LGPL v3 με παραπομπή στην GPL v3) βρίσκονται στο φάκελο [licenses](licenses) και στο παράθυρο Βοήθεια → Άδεια χρήσης.
+Το Opsis Media Suite διανέμεται με την **άδεια MIT** (βλ. [LICENSE](LICENSE)). Τα πλήρη κείμενα των αδειών των τρίτων στοιχείων (Electron/Chromium, music-metadata, adm-zip: MIT· FFmpeg: LGPL v3 με παραπομπή στην GPL v3) βρίσκονται στο φάκελο [licenses](licenses) και στο παράθυρο Βοήθεια → Άδεια χρήσης.
 
-*Waveframe is distributed under the **MIT License** (see [LICENSE](LICENSE)). The full texts of the third-party licenses (Electron/Chromium, music-metadata, adm-zip: MIT; FFmpeg: LGPL v3, which incorporates the GPL v3 by reference) are in the [licenses](licenses) folder and in Help → License.*
+*Opsis Media Suite is distributed under the **MIT License** (see [LICENSE](LICENSE)). The full texts of the third-party licenses (Electron/Chromium, music-metadata, adm-zip: MIT; FFmpeg: LGPL v3, which incorporates the GPL v3 by reference) are in the [licenses](licenses) folder and in Help → License.*
 
 **Το λογισμικό παρέχεται "ΩΣ ΕΧΕΙ", χωρίς καμία εγγύηση. / Provided "AS IS", without warranty of any kind.**

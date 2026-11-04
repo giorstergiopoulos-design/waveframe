@@ -151,7 +151,7 @@ function init({ getMainWin, getTheme, isMini, isTrusted, onLang }) {
         expectedSha256: sha, expectedSize: asset.size, maxBytes: 200 * 1024 * 1024,
         onProgress: (p) => { const n = Math.floor(p * 100); if (n !== last && splash && !splash.isDestroyed()) { last = n; splash.webContents.send('update:progress', { pct: n }); } },
       });
-      const script = S.buildUpdateScript({ pid: process.pid, setupPath: file, sha256: sha, exePaths: [path.join(process.env.ProgramFiles || 'C:\\Program Files', 'Waveframe', 'Waveframe.exe'), process.execPath] });
+      const script = S.buildUpdateScript({ pid: process.pid, setupPath: file, sha256: sha, exePaths: [path.join(process.env.ProgramFiles || 'C:\\Program Files', 'Opsis Media Suite', 'Opsis Media Suite.exe'), path.join(process.env.ProgramFiles || 'C:\\Program Files', 'Waveframe', 'Waveframe.exe'), process.execPath] });
       const helper = require('child_process').spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-Command', script], { detached: true, stdio: 'ignore', windowsHide: true });
       helper.unref();
       setTimeout(() => app.quit(), 600);
@@ -184,7 +184,7 @@ function init({ getMainWin, getTheme, isMini, isTrusted, onLang }) {
     const win = new BrowserWindow({
       ...main.getContentBounds(), parent: main, show: false, frame: false, transparent: true, hasShadow: false,
       resizable: false, movable: false, minimizable: false, maximizable: false, fullscreenable: false, skipTaskbar: true,
-      backgroundColor: '#00000000', title: 'Waveframe',
+      backgroundColor: '#00000000', title: 'Opsis Media Suite',
       webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, preload: path.join(__dirname, 'splash-preload.js') },
     });
     splash = win;
@@ -321,7 +321,7 @@ function init({ getMainWin, getTheme, isMini, isTrusted, onLang }) {
     const safeName = path.basename(asset.name).replace(/[<>:"/\\|?*\x00-\x1F]/g, '_');
     const mb = (asset.size / 1048576).toFixed(1);
     const choice = await dialog.showMessageBox(splash && !splash.isDestroyed() ? splash : getMainWin(), {
-      type: 'question', title: 'Waveframe', message: tx('dl.title'), detail: tx('dl.detail', { name: safeName, mb, host: new URL(asset.url).hostname, sha: sha.slice(0, 16) }),
+      type: 'question', title: 'Opsis Media Suite', message: tx('dl.title'), detail: tx('dl.detail', { name: safeName, mb, host: new URL(asset.url).hostname, sha: sha.slice(0, 16) }),
       buttons: [tx('dl.go'), tx('dl.page'), tx('dl.cancel')], defaultId: 0, cancelId: 2, noLink: true,
     });
     if (choice.response === 1) return page();
@@ -340,7 +340,7 @@ function init({ getMainWin, getTheme, isMini, isTrusted, onLang }) {
       return { status: 'downloaded', path: dest };
     } catch (err) {
       const bad = err && (err.code === 'sha-mismatch' || err.code === 'size-mismatch');
-      dialog.showMessageBox(splash && !splash.isDestroyed() ? splash : getMainWin(), { type: bad ? 'error' : 'warning', title: 'Waveframe', message: bad ? tx('dl.bad') : tx('dl.fail'), buttons: ['OK'] });
+      dialog.showMessageBox(splash && !splash.isDestroyed() ? splash : getMainWin(), { type: bad ? 'error' : 'warning', title: 'Opsis Media Suite', message: bad ? tx('dl.bad') : tx('dl.fail'), buttons: ['OK'] });
       return { status: 'failed', code: err && err.code };
     } finally { downloading = false; }
   });

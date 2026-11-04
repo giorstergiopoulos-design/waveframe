@@ -109,7 +109,7 @@ async function installFfmpeg(onProgress, confirm) {
 async function confirmFfmpegDownload(win, info) {
   const tx = (k, v) => suiteApi.tx(k, v);
   const r = await dialog.showMessageBox(win, {
-    type: 'question', title: 'Waveframe', message: tx('ff.title'),
+    type: 'question', title: 'Opsis Media Suite', message: tx('ff.title'),
     detail: tx('ff.detail', { name: info.name, mb: (info.size / 1048576).toFixed(0), sha: info.sha256.slice(0, 16) }),
     buttons: [tx('ff.go'), tx('ff.no')], defaultId: 0, cancelId: 1, noLink: true,
   });
@@ -117,6 +117,16 @@ async function confirmFfmpegDownload(win, info) {
 }
 
 let helpWindow = null;
+// 2.2.0 rename: the installer removes the old "Waveframe" autostart entry (it pointed to the old exe) and leaves this flag;
+// the new exe registers itself again, once, so a user who had autostart on keeps it.
+function reapplyAutostartAfterRename() {
+  try {
+    const flag = path.join(app.getPath('userData'), 'reenable-autostart.flag');
+    if (!fs.existsSync(flag)) return;
+    app.setLoginItemSettings({ openAtLogin: true, path: process.execPath });
+    fs.unlinkSync(flag);
+  } catch { /* best effort */ }
+}
 let helpLang = 'el'; // the app language, forwarded to the Help window for its changelog
 let currentTheme = 'midnight';
 
@@ -125,7 +135,7 @@ function createHelpWindow(parent) {
   helpWindow = new BrowserWindow({
     width: 720, height: 620, minWidth: 560, minHeight: 420,
     parent,
-    title: 'Waveframe — Βοήθεια',
+    title: 'Opsis Media Suite — Βοήθεια',
     icon: path.join(__dirname, 'icon.ico'),
     backgroundColor: '#0b0b14',
     webPreferences: {
@@ -200,7 +210,7 @@ function createWindow() {
     frame: false,
     icon: path.join(__dirname, 'icon.ico'),
     backgroundColor: '#0b0b14',
-    title: 'Waveframe',
+    title: 'Opsis Media Suite',
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -320,11 +330,11 @@ function createWindow() {
     const playing = payload.playing === true;
     const title = typeof payload.title === 'string' ? payload.title.slice(0, 300) : '';
     isPlaying = playing;
-    win.setTitle(title ? `${title} — Waveframe` : 'Waveframe');
+    win.setTitle(title ? `${title} — Opsis Media Suite` : 'Opsis Media Suite');
     updateThumbbar();
     if (playing && title && title !== lastNotifiedTitle && trackNotificationsEnabled && Notification.isSupported()) {
       lastNotifiedTitle = title;
-      new Notification({ title: 'Waveframe', body: title, silent: true }).show();
+      new Notification({ title: 'Opsis Media Suite', body: title, silent: true }).show();
     }
     if (!title) lastNotifiedTitle = null;
   });
@@ -413,8 +423,8 @@ function createWindow() {
   ipcMain.handle('settings:export', async (event, data) => {
     if (!fromMain(event) || !data || typeof data !== 'object' || Array.isArray(data) || JSON.stringify(data).length > 8 * 1024 * 1024) return { canceled: false, ok: false, error: 'invalid data' };
     const result = await dialog.showSaveDialog(win, {
-      defaultPath: 'waveframe-backup.json',
-      filters: [{ name: 'Waveframe Backup', extensions: ['json'] }],
+      defaultPath: 'opsis-media-suite-backup.json',
+      filters: [{ name: 'Opsis Media Suite Backup', extensions: ['json'] }],
     });
     if (result.canceled || !result.filePath) return { canceled: true };
     try {
@@ -429,7 +439,7 @@ function createWindow() {
     if (!fromMain(event)) return { canceled: true };
     const result = await dialog.showOpenDialog(win, {
       properties: ['openFile'],
-      filters: [{ name: 'Waveframe Backup', extensions: ['json'] }],
+      filters: [{ name: 'Opsis Media Suite Backup', extensions: ['json'] }],
     });
     if (result.canceled || !result.filePaths[0]) return { canceled: true };
     try {
@@ -473,6 +483,7 @@ if (!gotSingleInstanceLock) {
   });
 
   app.whenReady().then(() => {
+    reapplyAutostartAfterRename();
     suiteApi = suite.init({
       onLang: (l) => { helpLang = l; },
       getMainWin: () => mainWin,
@@ -482,9 +493,9 @@ if (!gotSingleInstanceLock) {
     });
     converterApi = converter.init({
       getMainWin: () => mainWin, resolveFfmpegPath, installFfmpeg, confirmFfmpegDownload,
-      // default place for every encode: Windows Music folder > WaveFrame (created automatically)
+      // default place for every encode: Windows Music folder > Opsis Media Suite (created automatically; the old Music\WaveFrame folder of earlier versions is left as it is)
       defaultVideoOutDir: () => { const d = path.join(app.getPath('videos'), 'Opsis Media Suite'); fs.mkdirSync(d, { recursive: true }); return d; },
-      defaultOutDir: () => { const d = path.join(app.getPath('music'), 'WaveFrame'); fs.mkdirSync(d, { recursive: true }); return d; },
+      defaultOutDir: () => { const d = path.join(app.getPath('music'), 'Opsis Media Suite'); fs.mkdirSync(d, { recursive: true }); return d; },
     });
     createWindow();
     forwardJumpListAction(process.argv);

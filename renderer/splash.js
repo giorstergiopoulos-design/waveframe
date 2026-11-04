@@ -61,7 +61,7 @@
   let page = 0;
   function buildWelcome() {
     $('heroSub').textContent = `v${init.version}`;
-    $('cardTitle').textContent = 'Waveframe';
+    $('cardTitle').textContent = 'Opsis Media Suite';
     card.setAttribute('aria-label', tr('splash.guideLabel'));
     const pages = $('pages'), dots = $('dots');
     for (let i = 1; i <= PAGES; i++) {

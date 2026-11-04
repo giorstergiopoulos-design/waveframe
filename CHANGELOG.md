@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.0 — Waveframe is now Opsis Media Suite
+- **Renamed:** the product, window titles, installer, shortcuts, Help, licence pages and all 20 languages now say "Opsis Media Suite". Files: OpsisMediaSuite-Setup-<version>.exe (installer) and OpsisMediaSuite-<version>.exe (portable). The repository, the settings folder (%AppData%\waveframe), the saved settings and the localStorage keys keep their old names on purpose, so nothing is lost.
+- **Upgrade from Waveframe:** the new installer has a new AppId and removes the old Waveframe (Program Files or per-user) first; an autostart entry of the old copy is carried over. The default audio folder is Music\Opsis Media Suite (Music\WaveFrame is left untouched).
+- **Updates of old versions:** a Waveframe 2.1.x client still looks for Waveframe.Setup.*.exe, so the release also carries a copy with that name (identical content, own .sha256); the new client accepts both names.
+- The "part of the Opsis Media Suite" line in About was removed (it is the product name now). 20 languages, tests updated.
+
 ## 2.1.0 — Waveframe, part of the Opsis Media Suite (first step)
 - **Video converter** in its own card beside the audio card of the Export / Convert tab, with the same queue/progress/cancel/cleanup engine: presets (YouTube 1080p/4K, small web, H.265 archive, phone/device, WebM VP9, GIF, extract audio), codec (H.264, H.265, VP9, AV1), container, resolution (never upscales), fps, CRF or target bitrate, 1-/2-pass, encoder speed, trim, remove audio, audio track and codec, embedded or burned-in subtitles (own track or external file), size estimate, thumbnail and probe info, output to Videos\Opsis Media Suite (or next to the original / a folder you pick, remembered).
 - **Encoders:** detected with ffmpeg -encoders / -hwaccels; hardware (NVENC, QuickSync, AMF) first, software as automatic fallback; the UI shows what was found and what is missing. The LGPL ffmpeg that Waveframe downloads has no libx264/libx265 (GPL): software H.264 is OpenH264 (bitrate only), H.265 needs a GPU encoder; a user's own ffmpeg on PATH is used as is.

@@ -1,16 +1,16 @@
-# Waveframe — μέρος του Opsis Media Suite / part of the Opsis Media Suite
+# Opsis Media Suite (πρώην / formerly Opsis Media Suite)
 
 **Έκδοση / Version:** 2.1.0 (πρώτο βήμα / first step) · Βάση / base: **Electron** (renderer = HTML/JS + Web Audio, main = Node)
 
 ## 1. Απόφαση και πλαίσιο
 
-Η μελέτη «Opsis Media Suite» (GUIDELINES.md) πρότεινε ως ιδανικό ένα WPF shell με WebView2 και LibVLC. Ο χρήστης αποφάσισε να ξεκινήσει το Media Suite με βάση το **Waveframe (Electron)**. Αυτό το έγγραφο περιγράφει τι μοιράζονται σήμερα τα προϊόντα, τη συγκεκριμένη αρχιτεκτονική του 2.1.0 και, ρητά, τι **δεν** γίνεται ακόμη.
+Η μελέτη «Opsis Media Suite» (GUIDELINES.md) πρότεινε ως ιδανικό ένα WPF shell με WebView2 και LibVLC. Ο χρήστης αποφάσισε να ξεκινήσει το Media Suite με βάση το **Opsis Media Suite (Electron)**. Αυτό το έγγραφο περιγράφει τι μοιράζονται σήμερα τα προϊόντα, τη συγκεκριμένη αρχιτεκτονική του 2.1.0 και, ρητά, τι **δεν** γίνεται ακόμη.
 
-*The study proposed a WPF + WebView2 + LibVLC shell as the end goal. The user decided to start the Media Suite from **Waveframe (Electron)**. This document says what is shared today, the concrete 2.1.0 architecture, and — explicitly — what is not done yet.*
+*The study proposed a WPF + WebView2 + LibVLC shell as the end goal. The user decided to start the Media Suite from **Opsis Media Suite (Electron)**. This document says what is shared today, the concrete 2.1.0 architecture, and — explicitly — what is not done yet.*
 
 | Προϊόν | Τεχνολογία | Ρόλος στο Suite |
 |---|---|---|
-| **Waveframe** | Electron, Web Audio, FFmpeg (LGPL, κατεβαίνει με επιβεβαίωση) | Βελτίωση/αναπαραγωγή ήχου, **μετατροπέας ήχου και βίντεο**, ενιαίος μηχανισμός ενημέρωσης |
+| **Opsis Media Suite** | Electron, Web Audio, FFmpeg (LGPL, κατεβαίνει με επιβεβαίωση) | Βελτίωση/αναπαραγωγή ήχου, **μετατροπέας ήχου και βίντεο**, ενιαίος μηχανισμός ενημέρωσης |
 | **Opsis Media Player Pro** | WPF .NET 10, LibVLCSharp | Παραμένει **ξεχωριστό προϊόν** (player βίντεο/ήχου, υπότιτλοι, Chromecast). Καμία συγχώνευση κώδικα στο 2.1.0 |
 
 ## 2. Αρχιτεκτονική 2.1.0
@@ -28,7 +28,7 @@ renderer (HTML/JS, sandbox, CSP)           main process (Node)                  
 ### Τι μοιράζονται ήχος και βίντεο (ήδη στο 2.1.0)
 - **Μία ουρά κωδικοποίησης** (`createQueue` της `convlib.js`): σειριακά, συνολική πρόοδος, ακύρωση, σφάλματα ανά αρχείο χωρίς να σταματά η ουρά.
 - **Ένας μηχανισμός ffmpeg:** ίδια εύρεση (PATH ή επαληθευμένη λήψη LGPL), ίδιο spawn με **πίνακα ορισμάτων** (ποτέ συνένωση string/shell), ίδιος καθαρισμός μισού αρχείου, ίδιο όνομα εξόδου με επίθημα που δεν αντικαθιστά ποτέ το πρωτότυπο.
-- **Ένας μετατροπέας:** η ίδια καρτέλα, ο ίδιος φάκελος εξόδου και η ίδια λογική «δίπλα στο αρχικό / προεπιλεγμένος φάκελος / δικός μου» (ήχος: Μουσική\WaveFrame· βίντεο: Βίντεο\Opsis Media Suite).
+- **Ένας μετατροπέας:** η ίδια καρτέλα, ο ίδιος φάκελος εξόδου και η ίδια λογική «δίπλα στο αρχικό / προεπιλεγμένος φάκελος / δικός μου» (ήχος: Μουσική\Opsis Media Suite· βίντεο: Βίντεο\Opsis Media Suite).
 - **Θέματα και γλώσσες:** τα ίδια skins/CSS variables και οι ίδιες 20 γλώσσες.
 - **Εφέ ήχου:** το ηχητικό κομμάτι ενός βίντεο μπορεί να περάσει από το δικό του μονοπάτι ήχου (EQ/LUFS της κάρτας ήχου) στο 2.1.1· στο 2.1.0 το βίντεο αντιγράφει ή επανακωδικοποιεί τον ήχο με ffmpeg.
 
@@ -42,7 +42,7 @@ renderer (HTML/JS, sandbox, CSP)           main process (Node)                  
 |---|---|
 | 1. Σκελετός (WPF + WebView2) | **Όχι.** Η βάση παραμένει Electron· το WPF shell μένει ως μακροπρόθεσμος στόχος |
 | 2. Επιλογή όψης «Interface: Classic / Wave» | **Όχι ακόμη.** Θα γίνει όταν ένα κοινό shell φιλοξενήσει και τις δύο όψεις |
-| 3. Ένα σερβίς κωδικοποίησης (ουρά FFmpeg) | **Ναι, για ήχο και βίντεο** μέσα στο Waveframe (ουρά + ακύρωση + πρόοδος + έλεγχος ορισμάτων) |
+| 3. Ένα σερβίς κωδικοποίησης (ουρά FFmpeg) | **Ναι, για ήχο και βίντεο** μέσα στο Opsis Media Suite (ουρά + ακύρωση + πρόοδος + έλεγχος ορισμάτων) |
 | 4. Φωτογραφίες (καρτέλα επεξεργασίας) | **Όχι** (2.2+) |
 | 5. Κοινή μηχανή ήχου (DSP πάνω σε LibVLC callbacks) | **Όχι** |
 
@@ -50,7 +50,7 @@ renderer (HTML/JS, sandbox, CSP)           main process (Node)                  
 - Συγχώνευση με το Media Player Pro, LibVLC, Chromecast/DLNA, κοινό shell και «Interface».
 - Κωδικοποίηση βίντεο **μόνο με Web APIs** (WebCodecs/MediaRecorder) χωρίς ffmpeg· χρειάζεται muxer (MP4/WebM) — 2.1.1+.
 - Επεξεργασία φωτογραφιών, μείωση θορύβου/φωνής ήχου με φίλτρα (afftdn, loudnorm) στο βίντεο.
-- Μετονομασία προϊόντος/αρχείων σε «Opsis Media Suite» (στο 2.1.0 μόνο README/About: «Waveframe — μέρος του Opsis Media Suite»).
+- ~~Μετονομασία προϊόντος σε «Opsis Media Suite»~~ — έγινε στο 2.2.0 (repo, φάκελος ρυθμίσεων και κλειδιά ρυθμίσεων κρατούν το παλιό όνομα επίτηδες).
 - Επαλήθευση hardware encoders σε πραγματική GPU (ανιχνεύονται από τη λίστα του ffmpeg· η πραγματική χρήση εξαρτάται από drivers).
 
 ## 5. Ασφάλεια και όρια (ισχύουν για κάθε κωδικοποίηση)

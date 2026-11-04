@@ -302,7 +302,7 @@ function httpGet(url, { lib = require('https'), timeout = 8000, maxBytes = RELEA
   return new Promise((resolve, reject) => {
     const fail = (code) => reject(Object.assign(new Error(code), { code }));
     if (!allowed(url)) return fail('bad-host');
-    const req = lib.get(url, { headers: { 'User-Agent': 'Waveframe', Accept: 'application/vnd.github+json, */*', ...headers }, timeout }, (res) => {
+    const req = lib.get(url, { headers: { 'User-Agent': 'OpsisMediaSuite', Accept: 'application/vnd.github+json, */*', ...headers }, timeout }, (res) => {
       const sc = res.statusCode;
       if (sc >= 300 && sc < 400 && sc !== 304 && res.headers.location) {
         res.resume();
@@ -331,7 +331,7 @@ function downloadVerified(url, destPath, { expectedSha256, expectedSize = 0, max
     const fail = (code, cleanup) => { if (cleanup) { try { fs.unlinkSync(destPath); } catch (_) { /* gone */ } } reject(Object.assign(new Error(code), { code })); };
     if (!/^[0-9a-f]{64}$/i.test(expectedSha256 || '')) return fail('no-checksum');
     if (!allowed(url)) return fail('bad-host');
-    const req = lib.get(url, { headers: { 'User-Agent': 'Waveframe' }, timeout }, (res) => {
+    const req = lib.get(url, { headers: { 'User-Agent': 'OpsisMediaSuite' }, timeout }, (res) => {
       const sc = res.statusCode;
       if (sc >= 300 && sc < 400 && res.headers.location) {
         res.resume();

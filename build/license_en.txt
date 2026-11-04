@@ -1,6 +1,6 @@
-﻿License — Waveframe
+﻿License — Opsis Media Suite
 
-Waveframe is distributed under the MIT License:
+Opsis Media Suite is distributed under the MIT License:
 
 MIT License
 

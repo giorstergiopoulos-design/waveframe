@@ -123,7 +123,7 @@ test('URL allow-list: https only, GitHub hosts only, no credentials, no odd port
 test('install detection: registry entries, word-boundary names, whitelisted env paths, fakes', () => {
   const reg = [
     'HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\abc',
-    '    DisplayName    REG_SZ    Waveframe 1.6.0',
+    '    DisplayName    REG_SZ    Opsis Media Suite 1.6.0',
     '    DisplayVersion    REG_SZ    1.6.0',
     '',
     'HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\def',
@@ -136,6 +136,8 @@ test('install detection: registry entries, word-boundary names, whitelisted env 
   const env = { LocalAppData: 'C:\\Users\\u\\AppData\\Local', ProgramFiles: 'C:\\Program Files' };
   const wf = S.findInstalled(apps.find((a) => a.id === 'waveframe'), { entries, exists: () => false, env });
   assert.deepEqual([wf.installed, wf.version], [true, '1.6.0']);
+  const opsisVsSuite = S.findInstalled(apps.find((a) => a.id === 'opsis'), { entries: [entries[0]], exists: () => false, env });
+  assert.equal(opsisVsSuite.installed, false, '"Opsis" must not match "Opsis Media Suite"');
   const opsis = S.findInstalled(apps.find((a) => a.id === 'opsis'), { entries, exists: () => false, env });
   assert.equal(opsis.installed, false, '"Opsis" must not match "Opsis Media Player Pro"');
   const mp = S.findInstalled(apps.find((a) => a.id === 'mediaplayer'), { entries, exists: () => false, env });

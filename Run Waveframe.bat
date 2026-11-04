@@ -1,8 +1,8 @@
 @echo off
-title Waveframe
+title Opsis Media Suite
 cd /d "%~dp0"
 if not exist "node_modules\.bin\electron.cmd" (
-  echo Waveframe dependencies are not installed yet.
+  echo Opsis Media Suite dependencies are not installed yet.
   echo Running "npm install", please wait...
   call npm install
 )
