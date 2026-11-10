@@ -769,8 +769,28 @@ document.querySelectorAll('.tab-btn').forEach((btn) => {
     document.querySelectorAll('.tab-pane').forEach((p) => p.classList.toggle('active', p.id === `tab-${btn.dataset.tab}`));
     if (btn.dataset.tab === 'player') resizeCanvas();
     if (btn.dataset.tab === 'converter') loadConverter();
+    if (btn.dataset.tab === 'video') loadVideoPlayer();
+    if (btn.dataset.tab === 'settings') loadMppImport();
+    if (btn.dataset.tab === 'photo') loadPhoto();
   });
 });
+
+/* Video player, photo editor and the Media Player Pro importer (2.3.0) are fetched the first time they are needed. */
+const lazyScripts = {};
+function loadScripts(key, files) {
+  if (lazyScripts[key]) return lazyScripts[key];
+  const load = (src) => new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.onload = res; el.onerror = rej; document.head.appendChild(el); });
+  lazyScripts[key] = files.reduce((p, f) => p.then(() => load(f)), Promise.resolve()).catch((e) => { delete lazyScripts[key]; throw e; });
+  return lazyScripts[key];
+}
+function loadVideoPlayer() { return loadScripts('video', ['vplib.js', 'videoplayer.js']); }
+function loadPhoto() { return loadScripts('photo', ['photolib.js', 'photo.js']); }
+function loadMppImport() { return loadScripts('mpp', ['mpplib.js', 'mppui.js']); }
+function showTab(name) { const b = document.querySelector(`.tab-btn[data-tab="${name}"]`); if (b) b.click(); }
+// "Open with" a video file (installer option / command line) or a video dropped on the window: show the video tab and play it
+window.waveframe.onOpenVideo((filePath) => { showTab('video'); loadVideoPlayer().then(() => window.WaveframeVideoPlayer.open(filePath)); });
+// only one thing plays at a time
+window.addEventListener('waveframe:video-playing', () => { try { engine.pauseActive(); syncPlayButton(); } catch (_) { /* nothing playing */ } });
 
 /* The converter (UI + helpers) is only fetched and run the first time its tab is opened. */
 let converterLoading = null;
@@ -1097,6 +1117,7 @@ setInterval(() => {
 els.seek.addEventListener('input', () => engine.seekTo(parseFloat(els.seek.value) / 1000));
 
 els.btnPlay.addEventListener('click', async () => {
+  if (window.WaveframeVideoPlayer && window.WaveframeVideoPlayer.playing) window.WaveframeVideoPlayer.pause();
   if (currentTrackIndex === -1 && playlist.length > 0) { playTrackAt(0); return; }
   await engine.togglePlay();
   syncPlayButton();

@@ -8,6 +8,8 @@ const AdmZip = require('adm-zip');
 const suite = require('./suite-main.js');
 const suiteLib = require('./suite.js');
 const converter = require('./conv-main.js');
+const media = require('./media-main.js');
+media.registerScheme(); // the read-only wfmedia: protocol of the video player must be declared before the app is ready
 
 // Isolated profile for tests/self-test (never touches the real settings).
 if (process.env.WAVEFRAME_USER_DATA) app.setPath('userData', process.env.WAVEFRAME_USER_DATA);
@@ -167,14 +169,21 @@ function saveWindowState(win) {
 }
 
 const AUDIO_FILE_EXTENSIONS = ['.mp3', '.wav', '.flac', '.ogg', '.m4a', '.opus', '.wma'];
+const VIDEO_FILE_EXTENSIONS = ['.mp4', '.m4v', '.mkv', '.webm', '.mov', '.avi', '.wmv', '.mpg', '.mpeg', '.ts', '.ogv'];
 function extractAudioFileArg(argv) {
   return argv.find((a) => AUDIO_FILE_EXTENSIONS.includes(path.extname(a).toLowerCase()) && fs.existsSync(a)) || null;
+}
+function extractVideoFileArg(argv) {
+  return argv.find((a) => VIDEO_FILE_EXTENSIONS.includes(path.extname(a).toLowerCase()) && fs.existsSync(a)) || null;
 }
 function forwardOpenFile(argv) {
   const filePath = extractAudioFileArg(argv);
   if (filePath && mainWin && !mainWin.isDestroyed()) {
     mainWin.webContents.send('open-file', filePath);
+    return;
   }
+  const video = extractVideoFileArg(argv);
+  if (video && mainWin && !mainWin.isDestroyed()) mainWin.webContents.send('open-video', video);
 }
 
 function updateJumpList() {
@@ -194,6 +203,7 @@ function updateJumpList() {
 let mainWin = null;
 let suiteApi = null;
 let converterApi = null;
+let mediaApi = null;
 
 function createWindow() {
   const savedState = loadWindowState();
@@ -240,6 +250,7 @@ function createWindow() {
           const results = await win.webContents.executeJavaScript('window.__selfTest()');
           results.push(...await suiteApi.selfTest());
           results.push(...await converterApi.selfTest());
+          results.push(...await mediaApi.selfTest());
           for (const r of results) console.log(`${r.ok ? 'PASS' : 'FAIL'} ${r.name}${r.extra ? ' — ' + r.extra : ''}`);
           code = results.every((r) => r.ok) ? 0 : 1;
         } catch (e) { console.log('FAIL self-test could not run: ' + e); }
@@ -497,6 +508,7 @@ if (!gotSingleInstanceLock) {
       defaultVideoOutDir: () => { const d = path.join(app.getPath('videos'), 'Opsis Media Suite'); fs.mkdirSync(d, { recursive: true }); return d; },
       defaultOutDir: () => { const d = path.join(app.getPath('music'), 'Opsis Media Suite'); fs.mkdirSync(d, { recursive: true }); return d; },
     });
+    mediaApi = media.init({ getMainWin: () => mainWin, resolveFfmpegPath });
     createWindow();
     forwardJumpListAction(process.argv);
     mainWin.webContents.once('did-finish-load', () => forwardOpenFile(process.argv));

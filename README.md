@@ -2,7 +2,7 @@
 
 # Opsis Media Suite
 
-**v2.2.0** · *πρώην Opsis Media Suite / formerly Opsis Media Suite* · Windows 10/11 · MIT · [Releases](../../releases) · [The Opsis family](#η-οικογένεια-opsis--the-opsis-family)
+**v2.3.0** · *πρώην Opsis Media Suite / formerly Opsis Media Suite* · Windows 10/11 · MIT · [Releases](../../releases) · [The Opsis family](#η-οικογένεια-opsis--the-opsis-family)
 
 <p align="center">
   <img src="docs/img/dark-player.png" alt="Player (dark)" width="48%" />
@@ -34,6 +34,9 @@
 |---|---|
 | ▶️ Αναπαραγωγή | Φόρτωση αρχείου/URL/μικροφώνου/test tone, playlist με drag-drop, crossfade, album art & μεταδεδομένα, 20 visualizers |
 | 🎚 Ενισχυτής Ήχου | 10-ζωνών ισοσταθμιστής (sliders ή draggable καμπύλη), Ενίσχυση Μπάσων/Έντασης, 3D Περιβάλλων Ήχος, Compressor/Reverb/Exciter, loudness normalization, master limiter — όλα με master bypass χωρίς απώλεια ρυθμίσεων |
+| 🎬 Βίντεο | Player με λίστα, συνέχιση, σελιδοδείκτες, υπότιτλους (SRT/VTT/ASS, καθυστέρηση/μέγεθος/χρώμα), ταχύτητα και ισοσταθμιστή στον ήχο του βίντεο |
+| 🖼 Φωτογραφίες | Έκθεση, αντίθεση, φωτεινές περιοχές/σκιές, κορεσμός, θερμοκρασία/απόχρωση, επίπεδα, όξυνση, μείωση θορύβου, περιστροφή/αναστροφή/περικοπή, αυτόματη βελτίωση· αποθήκευση στην αρχική ανάλυση (JPEG/PNG/WebP) |
+| 📥 Εισαγωγή από Media Player Pro | Μόνο ανάγνωση, με αντίγραφο ασφαλείας πρώτα, ανά κατηγορία, χωρίς διαγραφές — δες [docs/MEDIA-SUITE.md](docs/MEDIA-SUITE.md) |
 | 💾 Εξαγωγή / Μετατροπή | Μία καρτέλα για κομμάτια της λίστας και αρχεία ήχου/βίντεο: WAV 16/24/32f, FLAC, MP3 (CBR/VBR), AAC, OGG, Opus, AIFF, ALAC, WMA· έτοιμες ποιότητες, περικοπή, ρυθμός δειγματοληψίας, κανάλια, κανονικοποίηση LUFS (BS.1770), εφαρμογή ισοσταθμιστή/εφέ, batch με ακύρωση. Αποθήκευση από προεπιλογή στο `Μουσική\Opsis Media Suite` (ή αλλού). Το πρωτότυπο δεν αλλάζει ποτέ |
 | 🎞 Μετατροπέας βίντεο | Δική του κάρτα δίπλα στον ήχο: προρρυθμίσεις (YouTube 1080p/4K, μικρό web, αρχειοθέτηση H.265, τηλέφωνο, WebM, GIF, εξαγωγή ήχου), κωδικοποιητές H.264/H.265/VP9/AV1 με αυτόματη επιλογή του καλύτερου (GPU πρώτα, λογισμικό ως εφεδρεία), CRF ή bitrate, 1-/2-pass, κοπή, ήχος/υπότιτλοι (ενσωμάτωση ή burn-in), ουρά με πρόοδο και ακύρωση, πρόβλεψη μεγέθους. Αποθήκευση στο `Βίντεο\Opsis Media Suite` |
 | 🎨 Εμφάνιση | 20 θέματα (skins), 10 κινούμενα φόντα, 20 visualizers, 2 διατάξεις παραθύρου (Modern/Classic), custom accent color, mini/compact always-on-top mode |
@@ -51,7 +54,7 @@
 
 #### Επαλήθευση λήψης (SHA-256)
 
-Κάθε αρχείο του release συνοδεύεται από αρχείο `.sha256`. Στο PowerShell: `(Get-FileHash .\OpsisMediaSuite-Setup-2.2.0.exe -Algorithm SHA256).Hash` και σύγκρινε με το περιεχόμενο του `OpsisMediaSuite-Setup-2.2.0.exe.sha256`. **Απαιτήσεις:** Windows 10/11 x64· η εγκατάσταση γίνεται στο Program Files (ζητά δικαιώματα διαχειριστή). Ενημερώσεις: ειδοποίηση νέας έκδοσης με «Λήψη και εγκατάσταση» (SHA-256, σιωπηλή εγκατάσταση).
+Κάθε αρχείο του release συνοδεύεται από αρχείο `.sha256`. Στο PowerShell: `(Get-FileHash .\OpsisMediaSuite-Setup-2.3.0.exe -Algorithm SHA256).Hash` και σύγκρινε με το περιεχόμενο του `OpsisMediaSuite-Setup-2.3.0.exe.sha256`. **Απαιτήσεις:** Windows 10/11 x64· η εγκατάσταση γίνεται στο Program Files (ζητά δικαιώματα διαχειριστή). Ενημερώσεις: ειδοποίηση νέας έκδοσης με «Λήψη και εγκατάσταση» (SHA-256, σιωπηλή εγκατάσταση).
 
 ### Χτίσιμο από τον πηγαίο κώδικα
 
@@ -80,6 +83,9 @@ Opsis Media Suite is a free, real-time audio enhancer and media player for Windo
 |---|---|
 | ▶️ Playback | File/URL/microphone/test-tone input, drag-drop playlist, crossfade, album art & metadata, 20 visualizers |
 | 🎚 Audio Enhancer | 10-band equalizer (sliders or a draggable curve), Bass/Volume Boost, 3D Surround, Compressor/Reverb/Exciter, loudness normalization, master limiter — all with a master bypass that never loses your settings |
+| 🎬 Video | Player with playlist, resume, bookmarks, subtitles (SRT/VTT/ASS, delay/size/colour), speed and the equaliser on the video sound |
+| 🖼 Photos | Exposure, contrast, highlights/shadows, saturation, temperature/tint, levels, sharpening, noise reduction, rotate/flip/crop, auto enhance; saved at the original resolution (JPEG/PNG/WebP) |
+| 📥 Import from Media Player Pro | Read-only, backup first, per category, nothing deleted — see [docs/MEDIA-SUITE.md](docs/MEDIA-SUITE.md) |
 | 💾 Export / Convert | One tab for playlist tracks and audio/video files: WAV 16/24/32f, FLAC, MP3 (CBR/VBR), AAC, OGG, Opus, AIFF, ALAC, WMA; quality presets, trim, sample rate, channels, LUFS normalisation (BS.1770), optional equalizer/effects, batch with cancel. Saved to `Music\Opsis Media Suite` by default (or any folder). The original is never changed |
 | 🎞 Video converter | Its own card beside the audio card: presets (YouTube 1080p/4K, small web, H.265 archive, phone, WebM, GIF, extract audio), H.264/H.265/VP9/AV1 with the best available encoder chosen automatically (GPU first, software fallback), CRF or bitrate, 1-/2-pass, trim, audio/subtitles (embed or burn-in), queue with progress and cancel, size estimate. Saved to `Videos\Opsis Media Suite` |
 | 🎨 Appearance | 20 skins, 10 animated backgrounds, 20 visualizers, 2 window layouts (Modern/Classic), custom accent color, mini/compact always-on-top mode |
@@ -97,7 +103,7 @@ The app needs an FFmpeg (LGPL build) for exporting; if one isn't already on your
 
 #### Verify your download (SHA-256)
 
-Every release file has a matching `.sha256` file. In PowerShell: `(Get-FileHash .\OpsisMediaSuite-Setup-2.2.0.exe -Algorithm SHA256).Hash` and compare it with the contents of `OpsisMediaSuite-Setup-2.2.0.exe.sha256`. **Requirements:** Windows 10/11 x64; installs to Program Files (asks for administrator rights). Updates: new-version notification with "Download and install" (SHA-256, silent install).
+Every release file has a matching `.sha256` file. In PowerShell: `(Get-FileHash .\OpsisMediaSuite-Setup-2.3.0.exe -Algorithm SHA256).Hash` and compare it with the contents of `OpsisMediaSuite-Setup-2.3.0.exe.sha256`. **Requirements:** Windows 10/11 x64; installs to Program Files (asks for administrator rights). Updates: new-version notification with "Download and install" (SHA-256, silent install).
 
 ### Building from source
 

@@ -2,7 +2,7 @@
 <html lang="el">
 <head>
 <meta charset="UTF-8" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; img-src 'self' data:; media-src 'self' blob: http: https:; connect-src 'self' blob: http: https:;" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; img-src 'self' data:; media-src 'self' blob: http: https: wfmedia:; connect-src 'self' blob: http: https:;" />
 <title>Opsis Media Suite</title>
 <link rel="stylesheet" href="styles.css" />
 </head>
@@ -43,6 +43,14 @@
       <button class="tab-btn" data-tab="converter">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
         <span data-i18n="tab.converter">Export / Convert</span>
+      </button>
+      <button class="tab-btn" data-tab="video">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="15" height="16" rx="2"/><polygon points="22 8 17 12 22 16 22 8"/></svg>
+        <span data-i18n="tab.video">Βίντεο</span>
+      </button>
+      <button class="tab-btn" data-tab="photo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <span data-i18n="tab.photo">Φωτογραφίες</span>
       </button>
       <button class="tab-btn" data-tab="settings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -216,6 +224,104 @@
       <!-- CONVERTER TAB (content is built lazily by converter.js the first time the tab opens) -->
       <section id="tab-converter" class="tab-pane"></section>
 
+      <!-- VIDEO TAB (from Media Player Pro) -->
+      <section id="tab-video" class="tab-pane">
+        <div class="vp-layout">
+          <div class="panel vp-stage">
+            <h2 data-i18n="vp.title">Αναπαραγωγή βίντεο</h2>
+            <div class="vp-frame" id="vpFrame">
+              <video id="vpVideo" class="vp-video" preload="metadata" controls></video>
+              <p class="vp-empty" id="vpEmpty" data-i18n="vp.empty">Άνοιξε ή σύρε εδώ ένα βίντεο</p>
+            </div>
+            <div class="vp-bar">
+              <button class="small-btn" id="vpOpen" data-i18n="vp.openFiles">Άνοιγμα αρχείων</button>
+              <button class="small-btn" id="vpOpenFolder" data-i18n="vp.openFolder">Φάκελος</button>
+              <button class="small-btn" id="vpOpenUrl" data-i18n="vp.openUrl">Διεύθυνση URL</button>
+              <button class="small-btn" id="vpPrev" data-i18n="vp.prev">Προηγούμενο</button>
+              <button class="small-btn" id="vpNext" data-i18n="vp.next">Επόμενο</button>
+              <label class="vp-inline"><span data-i18n="vp.speed">Ταχύτητα</span>
+                <select id="vpSpeed"></select></label>
+              <button class="small-btn" id="vpFx" aria-pressed="false" data-i18n="vp.fx">Ισοσταθμιστής ήχου</button>
+              <button class="small-btn" id="vpFull" data-i18n="vp.fullscreen">Πλήρης οθόνη</button>
+            </div>
+            <div class="vp-bar vp-subs">
+              <label class="vp-inline"><span data-i18n="vp.subtitles">Υπότιτλοι</span>
+                <select id="vpSubTrack"></select></label>
+              <button class="small-btn" id="vpSubLoad" data-i18n="vp.subLoad">Φόρτωση αρχείου…</button>
+              <button class="small-btn" id="vpSubMinus" aria-label="-0.5 s">−0,5″</button>
+              <span class="vp-delay" id="vpSubDelay" aria-live="polite">0 s</span>
+              <button class="small-btn" id="vpSubPlus" aria-label="+0.5 s">+0,5″</button>
+              <label class="vp-inline"><span data-i18n="vp.subSize">Μέγεθος</span>
+                <input type="range" id="vpSubSize" min="8" max="48" step="1" value="16" /></label>
+              <label class="vp-inline"><span data-i18n="vp.subColor">Χρώμα</span>
+                <input type="color" id="vpSubColor" value="#ffffff" /></label>
+            </div>
+            <p class="hint" id="vpStatus" role="status" aria-live="polite"></p>
+          </div>
+          <div class="panel vp-side">
+            <h2 data-i18n="vp.playlist">Λίστα αναπαραγωγής</h2>
+            <ul class="vp-list" id="vpList"></ul>
+            <div class="vp-bar">
+              <button class="small-btn" id="vpClear" data-i18n="vp.clear">Εκκαθάριση</button>
+              <button class="small-btn" id="vpSavePl" data-i18n="vp.savePl">Αποθήκευση λίστας</button>
+              <button class="small-btn" id="vpImportM3u" data-i18n="vp.importM3u">Εισαγωγή M3U</button>
+            </div>
+            <div class="vp-bar">
+              <label class="vp-inline"><span data-i18n="vp.savedLists">Αποθηκευμένες λίστες</span>
+                <select id="vpPlSelect"></select></label>
+              <button class="small-btn" id="vpPlLoad" data-i18n="vp.load">Φόρτωση</button>
+              <button class="small-btn" id="vpPlDelete" data-i18n="vp.delete">Διαγραφή</button>
+            </div>
+            <div class="vp-bar">
+              <label class="vp-inline"><span data-i18n="vp.recent">Πρόσφατα</span>
+                <select id="vpRecent"></select></label>
+            </div>
+            <h3 data-i18n="vp.bookmarks">Σελιδοδείκτες</h3>
+            <button class="small-btn" id="vpBookmark" data-i18n="vp.addBookmark">Προσθήκη σελιδοδείκτη εδώ</button>
+            <ul class="vp-list" id="vpBookmarks"></ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- PHOTO TAB -->
+      <section id="tab-photo" class="tab-pane">
+        <div class="ph-layout">
+          <div class="panel ph-stage">
+            <h2 data-i18n="ph.title">Βελτίωση φωτογραφιών</h2>
+            <div class="ph-drop" id="phDrop">
+              <canvas id="phCanvas" class="ph-canvas"></canvas>
+              <p class="vp-empty" id="phEmpty" data-i18n="ph.empty">Άνοιξε ή σύρε εδώ μια φωτογραφία</p>
+            </div>
+            <div class="vp-bar">
+              <button class="small-btn" id="phOpen" data-i18n="ph.open">Άνοιγμα</button>
+              <button class="small-btn" id="phAuto" data-i18n="ph.auto">Αυτόματη βελτίωση</button>
+              <button class="small-btn" id="phReset" data-i18n="ph.reset">Επαναφορά</button>
+              <button class="small-btn" id="phCompare" data-i18n="ph.compare">Πριν (κράτα πατημένο)</button>
+              <button class="small-btn" id="phRotL" data-i18n="ph.rotL">↶ 90°</button>
+              <button class="small-btn" id="phRotR" data-i18n="ph.rotR">↷ 90°</button>
+              <button class="small-btn" id="phFlipH" data-i18n="ph.flipH">Οριζόντια</button>
+              <button class="small-btn" id="phFlipV" data-i18n="ph.flipV">Κάθετα</button>
+              <label class="vp-inline"><span data-i18n="ph.crop">Περικοπή</span>
+                <select id="phCrop"></select></label>
+            </div>
+            <canvas id="phHist" class="ph-hist" width="256" height="64" role="img" aria-label="Histogram"></canvas>
+            <p class="hint" id="phInfo" role="status" aria-live="polite"></p>
+          </div>
+          <div class="panel ph-controls" id="phControls">
+            <h2 data-i18n="ph.adjust">Ρυθμίσεις</h2>
+            <div id="phSliders"></div>
+            <h2 data-i18n="ph.export">Εξαγωγή</h2>
+            <div class="vp-bar">
+              <label class="vp-inline"><span data-i18n="ph.format">Μορφή</span>
+                <select id="phFormat"><option value="jpeg">JPEG</option><option value="png">PNG</option><option value="webp">WebP</option></select></label>
+              <label class="vp-inline" id="phQualityField"><span data-i18n="ph.quality">Ποιότητα</span>
+                <input type="range" id="phQuality" min="50" max="100" step="1" value="92" /></label>
+            </div>
+            <button class="small-btn" id="phSave" data-i18n="ph.save">Αποθήκευση στην αρχική ανάλυση…</button>
+          </div>
+        </div>
+      </section>
+
       <section id="tab-settings" class="tab-pane">
         <div class="panel" id="depsPanel">
           <h2 data-i18n="settings.deps">Πρόσθετα εξαρτήματα</h2>
@@ -225,6 +331,17 @@
           </div>
           <button id="btnInstallDeps" class="small-btn dep-hidden" data-i18n="settings.depsInstall">⬇ Λήψη &amp; εγκατάσταση</button>
           <p class="hint" id="depsProgress"></p>
+        </div>
+        <div class="panel" id="mppPanel">
+          <h2 data-i18n="mpp.title">Εισαγωγή από το Media Player Pro</h2>
+          <p class="hint" data-i18n="mpp.hint">Διαβάζει (χωρίς καμία αλλαγή ή διαγραφή) τα δεδομένα του Opsis Media Player Pro και τα προσθέτει εδώ. Πριν από κάθε εισαγωγή κρατιέται αντίγραφο ασφαλείας.</p>
+          <div class="vp-bar">
+            <button class="small-btn" id="mppScan" data-i18n="mpp.scan">Αναζήτηση δεδομένων</button>
+            <button class="small-btn" id="mppM3u" data-i18n="mpp.m3u">Προσθήκη λιστών M3U…</button>
+          </div>
+          <div id="mppResult" class="mpp-result"></div>
+          <button class="small-btn dep-hidden" id="mppImport" data-i18n="mpp.import">Εισαγωγή των επιλεγμένων</button>
+          <p class="hint" id="mppStatus" role="status" aria-live="polite"></p>
         </div>
         <div class="panel">
           <h2 data-i18n="settings.language">Γλώσσα</h2>

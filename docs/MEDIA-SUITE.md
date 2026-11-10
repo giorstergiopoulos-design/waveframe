@@ -58,3 +58,18 @@ renderer (HTML/JS, sandbox, CSP)           main process (Node)                  
 - Φίλτρα με διαδρομές (υπότιτλοι burn-in) περνούν από ειδικό escaping και μόνο από υπάρχοντα αρχεία.
 - Όρια: μέγιστο πλήθος αρχείων ουράς, ανάλυση ≤ 7680×4320, fps ≤ 240, bitrate/CRF σε εύρος· καθαρισμός μισού αρχείου σε ακύρωση/σφάλμα.
 - Η εφαρμογή δεν τρέχει τίποτα που δεν έχει επαληθευτεί (λήψη FFmpeg με SHA-256, ενημέρωση με SHA-256).
+
+
+## Media Player Pro → Opsis Media Suite (2.3.0)
+| Media Player Pro | In the Suite | Notes |
+|---|---|---|
+| Player (LibVLC) | Video tab (HTML5 video + the Suite's DSP) | Formats Chromium cannot play: convert in Export / Convert. DVD, capture devices: not carried over |
+| recent.txt, bookmarks.txt, resume.txt | Importer → recent, bookmarks, resume positions | merged, deduplicated, local positions win |
+| settings.json | Importer → subtitle options (languages, size, colour, auto-sync, plain name) | **OsApiKey / OsUsername / OsPassword are never copied** |
+| audio.json, audio-presets.json | Importer → equaliser presets | the 10 bands are re-mapped to the Suite's frequencies by interpolation; bass level 0–10 → bass boost dB |
+| skin / mode / accent | Importer → light/dark skin and accent colour | Wave/Classic is not a Suite concept |
+| M3U playlists | "Add M3U playlists…" in the importer and in the Video tab | relative entries are resolved against the file |
+| convert-dir.txt | Importer → video output folder | |
+| meta\*.json, suite.json, window.txt | not migrated | cache / update state / window geometry |
+
+Safety rules of the importer: the source folder is only opened for reading (size-capped, links not followed); a backup is written to the app's data folder before anything changes; only ticked categories are merged; nothing is deleted; running it twice changes nothing the second time. Tests: `test/mpp-import.test.js` (synthetic fixtures) and the Electron self-test (byte-identical source).
