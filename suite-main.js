@@ -152,7 +152,7 @@ function init({ getMainWin, getTheme, isMini, isTrusted, onLang }) {
         onProgress: (p) => { const n = Math.floor(p * 100); if (n !== last && splash && !splash.isDestroyed()) { last = n; splash.webContents.send('update:progress', { pct: n }); } },
       });
       const script = S.buildUpdateScript({ pid: process.pid, setupPath: file, sha256: sha, exePaths: [path.join(process.env.ProgramFiles || 'C:\\Program Files', 'Opsis Media Suite', 'Opsis Media Suite.exe'), path.join(process.env.ProgramFiles || 'C:\\Program Files', 'Waveframe', 'Waveframe.exe'), process.execPath] });
-      const helper = require('child_process').spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-Command', script], { detached: true, stdio: 'ignore', windowsHide: true });
+      const helper = require('child_process').spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-Command', script], { detached: true, stdio: 'ignore', windowsHide: true, env: S.powershellEnv(process.env) });
       helper.unref();
       setTimeout(() => app.quit(), 600);
       return { status: 'installing' };

@@ -3,6 +3,10 @@
 ;         ISCC.exe /DMyAppVersion=1.7.0 installer\OpsisMediaSuite.iss      -> installer\output\OpsisMediaSuite-Setup-<version>.exe
 ; Greek.isl is the unofficial community translation from the Inno Setup repository (copied in Languages\ so the script compiles anywhere).
 
+#if Ver < EncodeVer(7, 0, 0)
+  #error This script needs Inno Setup 7 or newer.
+#endif
+
 #ifndef MyAppVersion
   #define MyAppVersion "2.2.0"
 #endif
@@ -16,6 +20,13 @@ AppId={{B3E7A5D1-4C62-4F08-9A7E-2D51C8F06B94}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher=giorstergiopoulos-design
+AppCopyright=Copyright (c) 2026 giorstergiopoulos-design
+VersionInfoCompany=giorstergiopoulos-design
+VersionInfoDescription={#MyAppName} Setup
+VersionInfoVersion={#MyAppVersion}
+VersionInfoCopyright=Copyright (c) 2026 giorstergiopoulos-design
+VersionInfoProductName={#MyAppName}
+VersionInfoProductVersion={#MyAppVersion}
 AppPublisherURL=https://github.com/giorstergiopoulos-design/waveframe
 AppSupportURL=https://github.com/giorstergiopoulos-design/waveframe/issues
 DefaultDirName={autopf}\{#MyAppName}

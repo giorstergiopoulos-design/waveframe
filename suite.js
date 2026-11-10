@@ -1,7 +1,7 @@
 'use strict';
 // Pure/testable logic for the welcome guide, the "Opsis family" showcase and the new-version check.
 // No Electron imports here - main-process glue lives in suite-main.js, unit tests in test/suite.test.js.
-// Shared spec: C:\w\SUITE-SPEC.md (catalogue schema in suite-apps.json).
+// Shared spec: SUITE-SPEC.md of the Opsis family (catalogue schema in suite-apps.json).
 
 const crypto = require('crypto');
 const fs = require('fs');
@@ -282,6 +282,14 @@ const psQuote = (x) => "'" + String(x).replace(/'/g, "''") + "'";
 // The helper that outlives the app: waits for the app to end, re-checks the hash of the downloaded setup, runs it silently
 // (the setup elevates itself for Program Files), and opens the app again when it succeeded.
 // exePaths: where the app may be after the setup ran (the first that exists is started - a per-user install moves to Program Files).
+// Windows PowerShell 5.1 started from a PowerShell 7 session (CI runners, some user shells) inherits a PSModulePath that points at the 7.x modules,
+// which 5.1 cannot load (Get-FileHash, Start-Process ... fail with exit 1). The helper must always use its own default module path.
+function powershellEnv(env) {
+  const out = { ...env };
+  for (const k of Object.keys(out)) if (k.toLowerCase() === 'psmodulepath') delete out[k];
+  return out;
+}
+
 function buildUpdateScript({ pid, setupPath, sha256, exePaths }) {
   if (!/^\d+$/.test(String(pid)) || !/^[0-9a-f]{64}$/i.test(sha256)) throw new Error('bad update parameters');
   return [
@@ -367,6 +375,7 @@ function downloadVerified(url, destPath, { expectedSha256, expectedSize = 0, max
 }
 
 module.exports = {
+  powershellEnv,
   OWNER, SELF_REPO, CATALOGUE_URL, CATALOGUE_MAX_BYTES, API_HOSTS, DOWNLOAD_OPTS,
   parseVersion, compareVersions, isNewer, majorMinor,
   STATE_DEFAULTS, sanitizeState, createStore, shouldShowWelcome, shouldNotify,

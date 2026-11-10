@@ -26,16 +26,16 @@ function runHelper(tamper) {
     const sha = crypto.createHash('sha256').update(fs.readFileSync(setup)).digest('hex');
     const dummy = spawn('cmd.exe', ['/c', 'ping -n 2 127.0.0.1 > nul'], { windowsHide: true });
     const script = S.buildUpdateScript({ pid: dummy.pid, setupPath: setup, sha256: tamper ? 'f'.repeat(64) : sha, exePaths: [newApp, oldApp] });
-    const r = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-Command', script], { windowsHide: true, timeout: 60000 });
+    const r = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-Command', script], { windowsHide: true, timeout: 60000, env: S.powershellEnv(process.env) });
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1500); // the restarted app runs detached
     const has = (f) => fs.existsSync(path.join(dir, f));
-    return { exit: r.status, setupRan: has('setup.args'), args: has('setup.args') ? fs.readFileSync(path.join(dir, 'setup.args'), 'utf8').trim() : '', newApp: has('new.ran'), oldApp: has('old.ran') };
+    return { stderr: String(r.stderr || ''), exit: r.status, setupRan: has('setup.args'), args: has('setup.args') ? fs.readFileSync(path.join(dir, 'setup.args'), 'utf8').trim() : '', newApp: has('new.ran'), oldApp: has('old.ran') };
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 }
 
 test('update helper: matching hash -> silent setup runs, app restarts from the new location', opts, () => {
   const r = runHelper(false);
-  assert.equal(r.exit, 0);
+  assert.equal(r.exit, 0, r.stderr);
   assert.equal(r.setupRan, true);
   assert.equal(r.args, '/SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS');
   assert.equal(r.newApp, true, 'Program Files location is started');
@@ -44,7 +44,12 @@ test('update helper: matching hash -> silent setup runs, app restarts from the n
 
 test('update helper: a tampered setup (hash mismatch) is never run and the app is not restarted', opts, () => {
   const r = runHelper(true);
-  assert.equal(r.exit, 2);
+  assert.equal(r.exit, 2, r.stderr);
   assert.equal(r.setupRan, false);
   assert.equal(r.newApp || r.oldApp, false);
+});
+
+test('powershellEnv drops an inherited PSModulePath (PowerShell 7 modules break Windows PowerShell 5.1) and keeps the rest', () => {
+  const out = S.powershellEnv({ Path: 'x', PSModulePath: 'C:\pwsh7\Modules', psmodulepath: 'y', TEMP: 't' });
+  assert.deepEqual(Object.keys(out).sort(), ['Path', 'TEMP']);
 });
