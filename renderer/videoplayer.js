@@ -12,6 +12,7 @@
   const put = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) { /* storage unavailable */ } };
   const fmt = (s, vars) => Object.entries(vars || {}).reduce((acc, [k, v]) => acc.split(`{${k}}`).join(String(v)), s);
 
+  let ab = { stage: 'off', a: 0, b: 0 }, pic = { brightness: 100, contrast: 100, saturation: 100, rotate: 0, flipH: false, flipV: false }, stopAfter = false;
   let video, list = [], idx = -1, subSrc = [], subSel = -1, subDelay = 0, saveTimer = 0, built = false, fx = null;
 
   const say = (text) => { const e = $('vpStatus'); if (e) e.textContent = text || ''; };
@@ -186,6 +187,49 @@
     say(fmt(t('vp.m3uImported'), { n }));
   }
 
+  /* ---------------- repeat, frame step, A-B, snapshot, picture, info (2.3.1) ---------------- */
+  function applyPicture() {
+    const css = VP.pictureCss(pic, video.clientWidth, video.clientHeight);
+    video.style.filter = css.filter; video.style.transform = css.transform;
+  }
+  function onEnded() {
+    saveResume();
+    if (stopAfter) { stopAfter = false; $('vpStopAfter').checked = false; return; }
+    const n = VP.nextIndex($('vpRepeat').value, idx, list.length);
+    if (n === idx && n >= 0) { video.currentTime = 0; video.play().catch(() => {}); } else if (n >= 0) playAt(n);
+  }
+  function stepFrame(d) { video.pause(); video.currentTime = Math.max(0, video.currentTime + d / 25); }
+  function toggleAB() {
+    ab = VP.abStep(ab, video.currentTime);
+    if (ab.stage === 'a') say(fmt(t('vp.abA'), { time: VP.clock(ab.a * 1000) }));
+    else if (ab.stage === 'loop') say(fmt(t('vp.abB'), { a: VP.clock(ab.a * 1000), b: VP.clock(ab.b * 1000) }));
+    else say(t('vp.abOff'));
+  }
+  async function snapshot() {
+    if (!current() || !video.videoWidth) return;
+    try {
+      const c = document.createElement('canvas'); c.width = video.videoWidth; c.height = video.videoHeight;
+      c.getContext('2d').drawImage(video, 0, 0);
+      const blob = await new Promise((res) => c.toBlob(res, 'image/png'));
+      if (!blob) throw new Error('empty');
+      const r = await api.photoSave({ format: 'png', name: VP.titleOf(current()), bytes: await blob.arrayBuffer() });
+      say(r && r.ok ? t('vp.snapSaved') : r && r.canceled ? '' : t('ph.saveFailed'));
+    } catch (_) { say(t('ph.saveFailed')); }
+  }
+  async function fileInfo() {
+    const it = current(); if (!it) return;
+    const p = VP.isUrl(it) ? null : await api.vidProbe(it).catch(() => null);
+    const lines = [VP.titleOf(it)];
+    if (video.videoWidth) lines.push(`${video.videoWidth}×${video.videoHeight} · ${VP.clock(video.duration * 1000)}`);
+    if (p) {
+      if (p.video) lines.push(`${p.video.codec} ${p.video.width}×${p.video.height}${p.video.fps ? ' · ' + p.video.fps + ' fps' : ''}`);
+      for (const a of p.audio) lines.push(`${a.codec}${a.channels ? ' · ' + a.channels : ''}${a.lang ? ' · ' + a.lang : ''}`);
+      for (const sb of p.subtitles) lines.push(`${sb.codec}${sb.lang ? ' · ' + sb.lang : ''}`);
+    } else lines.push(t('vp.infoNone'));
+    await showAlertDialog(t('vp.info'), lines.join('\n'));
+  }
+  function aria() { $('vpFramePrev').setAttribute('aria-label', t('vp.framePrev')); $('vpFramePrev').title = t('vp.framePrev'); $('vpFrameNext').setAttribute('aria-label', t('vp.frameNext')); $('vpFrameNext').title = t('vp.frameNext'); }
+
   /* ---------------- build ---------------- */
   function build() {
     if (built) return; built = true;
@@ -222,12 +266,28 @@
     $('vpRecent').addEventListener('change', () => { const p = $('vpRecent').value; if (p) addPaths([p], true); $('vpRecent').value = ''; });
 
     video.addEventListener('loadedmetadata', () => {
+      ab = { stage: 'off', a: 0, b: 0 };
       const it = current(); if (!it) return;
       const pos = get(K.resume, {})[it];
       if (pos > 0 && pos / 1000 < video.duration - 10) { video.currentTime = pos / 1000; say(fmt(t('vp.resumed'), { time: VP.clock(pos) })); }
     });
     video.addEventListener('error', () => say(t('vp.cantPlay')));
-    video.addEventListener('ended', () => { saveResume(); if (idx < list.length - 1) next(1); });
+    video.addEventListener('ended', onEnded);
+    video.addEventListener('timeupdate', () => { if (ab.stage === 'loop' && video.currentTime >= ab.b) video.currentTime = ab.a; });
+    $('vpStopAfter').addEventListener('change', () => { stopAfter = $('vpStopAfter').checked; });
+    $('vpFramePrev').addEventListener('click', () => stepFrame(-1));
+    $('vpFrameNext').addEventListener('click', () => stepFrame(1));
+    $('vpAB').addEventListener('click', toggleAB);
+    $('vpSnap').addEventListener('click', snapshot);
+    $('vpInfo').addEventListener('click', fileInfo);
+    const picIn = () => { pic.brightness = Number($('vpBright').value); pic.contrast = Number($('vpContrast').value); pic.saturation = Number($('vpSat').value); applyPicture(); };
+    for (const id of ['vpBright', 'vpContrast', 'vpSat']) $(id).addEventListener('input', picIn);
+    $('vpRot').addEventListener('click', () => { pic.rotate = (pic.rotate + 90) % 360; applyPicture(); });
+    $('vpFlipH').addEventListener('click', () => { pic.flipH = !pic.flipH; applyPicture(); });
+    $('vpFlipV').addEventListener('click', () => { pic.flipV = !pic.flipV; applyPicture(); });
+    $('vpPicReset').addEventListener('click', () => { pic = { brightness: 100, contrast: 100, saturation: 100, rotate: 0, flipH: false, flipV: false }; $('vpBright').value = $('vpContrast').value = $('vpSat').value = '100'; applyPicture(); });
+    $('vpRepeat').value = get('waveframe.video.repeat', 'off'); $('vpRepeat').addEventListener('change', () => put('waveframe.video.repeat', $('vpRepeat').value));
+    aria(); document.addEventListener('waveframe:language-changed', aria);
     video.addEventListener('pause', saveResume);
     video.addEventListener('play', () => window.dispatchEvent(new CustomEvent('waveframe:video-playing')));
     saveTimer = setInterval(() => { if (!video.paused) saveResume(); }, 5000);
@@ -259,6 +319,10 @@
       else if (k === 'n' || k === 'N') next(1);
       else if (k === 'p' || k === 'P') next(-1);
       else if (k === 'b' || k === 'B') addBookmark();
+      else if (k === '.') stepFrame(1);
+      else if (k === ',') stepFrame(-1);
+      else if (k === 'l' || k === 'L') toggleAB();
+      else if (k === 's' || k === 'S') snapshot();
       else used = false;
       if (used) e.preventDefault();
     });

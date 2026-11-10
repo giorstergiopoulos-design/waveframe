@@ -897,3 +897,6 @@ body.mini-mode #bgCanvas { display: none; }
 .mpp-row .mpp-count { margin-left: auto; opacity: 0.75; font-variant-numeric: tabular-nums; }
 .mpp-notes { margin: 8px 0 0 18px; padding: 0; font-size: 13px; opacity: 0.85; }
 @media (max-width: 1250px) { .vp-layout, .ph-layout { grid-template-columns: minmax(0, 1fr); } }
+
+.vp-video { transition: transform 0.2s ease; }
+.vp-picture .vp-inline input[type=range] { max-width: 110px; }

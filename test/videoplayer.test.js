@@ -67,3 +67,26 @@ test('the main process side only serves media and subtitles, never other file ty
   assert.ok(!/\.sub|exe|bat|dll/.test(M.VIDEO_EXTS.join(',') + M.AUDIO_EXTS.join(',')) || true);
   assert.ok(![...M.VIDEO_EXTS, ...M.AUDIO_EXTS].some((e) => ['exe', 'bat', 'cmd', 'dll', 'js', 'ps1', 'json'].includes(e)));
 });
+
+test('repeat modes decide what plays next', () => {
+  assert.equal(V.nextIndex('off', 0, 3), 1); assert.equal(V.nextIndex('off', 2, 3), -1);
+  assert.equal(V.nextIndex('list', 2, 3), 0); assert.equal(V.nextIndex('file', 1, 3), 1);
+  assert.equal(V.nextIndex('off', 0, 0), -1);
+  for (let i = 0; i < 20; i++) { const n = V.nextIndex('shuffle', 2, 5, i / 20); assert.ok(n >= 0 && n < 5 && n !== 2, 'shuffle never repeats the current one: ' + n); }
+  assert.equal(V.nextIndex('shuffle', 0, 1), 0);
+});
+
+test('picture controls build a CSS filter and transform, neutral gives empty strings', () => {
+  assert.deepEqual(V.pictureCss({ brightness: 100, contrast: 100, saturation: 100, rotate: 0 }, 800, 450), { filter: '', transform: '' });
+  const c = V.pictureCss({ brightness: 120, contrast: 90, saturation: 300, rotate: 90, flipH: true }, 800, 450);
+  assert.match(c.filter, /brightness\(120%\).*contrast\(90%\).*saturate\(200%\)/);
+  assert.match(c.transform, /rotate\(90deg\) scale\(0\.5\d*\) scaleX\(-1\)/);
+  assert.equal(V.pictureCss({ rotate: 45 }, 800, 450).transform, '');
+});
+
+test('A-B loop goes none -> A -> loop -> none and ignores a B that is not after A', () => {
+  let s = V.abStep(undefined, 10); assert.deepEqual(s, { stage: 'a', a: 10, b: 0 });
+  assert.equal(V.abStep(s, 10.1).stage, 'a');
+  s = V.abStep(s, 25); assert.deepEqual(s, { stage: 'loop', a: 10, b: 25 });
+  assert.equal(V.abStep(s, 30).stage, 'off');
+});

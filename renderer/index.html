@@ -244,6 +244,31 @@
               <button class="small-btn" id="vpFx" aria-pressed="false" data-i18n="vp.fx">Ισοσταθμιστής ήχου</button>
               <button class="small-btn" id="vpFull" data-i18n="vp.fullscreen">Πλήρης οθόνη</button>
             </div>
+            <div class="vp-bar vp-extra">
+              <label class="vp-inline"><span data-i18n="vp.repeat">Επανάληψη</span>
+                <select id="vpRepeat">
+                  <option value="off" data-i18n="vp.repeatOff">Καμία</option>
+                  <option value="list" data-i18n="vp.repeatList">Λίστα</option>
+                  <option value="file" data-i18n="vp.repeatFile">Αρχείο</option>
+                  <option value="shuffle" data-i18n="vp.repeatShuffle">Τυχαία σειρά</option>
+                </select></label>
+              <label class="vp-inline"><input type="checkbox" id="vpStopAfter" /><span data-i18n="vp.stopAfter">Διακοπή μετά το τρέχον</span></label>
+              <button class="small-btn" id="vpFramePrev">◂|</button>
+              <button class="small-btn" id="vpFrameNext">|▸</button>
+              <button class="small-btn" id="vpAB" data-i18n="vp.abLoop">Επανάληψη A-B</button>
+              <button class="small-btn" id="vpSnap" data-i18n="vp.snapshot">Στιγμιότυπο</button>
+              <button class="small-btn" id="vpInfo" data-i18n="vp.info">Πληροφορίες αρχείου</button>
+            </div>
+            <div class="vp-bar vp-picture">
+              <span class="vp-inline" data-i18n="vp.picture">Εικόνα</span>
+              <label class="vp-inline"><span data-i18n="vp.brightness">Φωτεινότητα</span><input type="range" id="vpBright" min="50" max="150" step="1" value="100" /></label>
+              <label class="vp-inline"><span data-i18n="ph.contrast">Αντίθεση</span><input type="range" id="vpContrast" min="50" max="150" step="1" value="100" /></label>
+              <label class="vp-inline"><span data-i18n="ph.saturation">Κορεσμός</span><input type="range" id="vpSat" min="0" max="200" step="1" value="100" /></label>
+              <button class="small-btn" id="vpRot" data-i18n="ph.rotR">↷ 90°</button>
+              <button class="small-btn" id="vpFlipH" data-i18n="ph.flipH">Αναστροφή ↔</button>
+              <button class="small-btn" id="vpFlipV" data-i18n="ph.flipV">Αναστροφή ↕</button>
+              <button class="small-btn" id="vpPicReset" data-i18n="ph.reset">Επαναφορά</button>
+            </div>
             <div class="vp-bar vp-subs">
               <label class="vp-inline"><span data-i18n="vp.subtitles">Υπότιτλοι</span>
                 <select id="vpSubTrack"></select></label>

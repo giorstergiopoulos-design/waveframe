@@ -7,7 +7,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   const VIDEO = ['mp4', 'm4v', 'mkv', 'webm', 'mov', 'avi', 'wmv', 'flv', 'mpg', 'mpeg', 'ts', 'm2ts', 'ogv', '3gp'];
   const AUDIO = ['mp3', 'wav', 'flac', 'ogg', 'oga', 'opus', 'm4a', 'aac', 'wma', 'aiff', 'aif'];
-  const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
+  const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2, 4];
   const LIMITS = { recent: 30, playlist: 2000, bookmarks: 2000, resume: 2000, cues: 20000 };
 
   const extOf = (p) => { const m = /\.([A-Za-z0-9]{1,5})$/.exec(String(p || '')); return m ? m[1].toLowerCase() : ''; };
@@ -108,5 +108,34 @@
   // A path from storage is only offered for playback when it looks like something the main process would serve.
   const playable = (p) => typeof p === 'string' && (isUrl(p) || (/^[A-Za-z]:[\\/]/.test(p) && kindOf(p) !== '')) && p.length < 2048;
 
-  return { VIDEO, AUDIO, SPEEDS, LIMITS, extOf, kindOf, titleOf, isUrl, mediaUrl, clock, vttTime, srtToVtt, assToSrt, subtitleToVtt, resumeAction, pushRecent, addBookmark, sortedBookmarks, limitResume, playable };
+  // What plays after the current item. mode: off | list | file | shuffle. rnd: a number in [0,1) (injected for tests).
+  function nextIndex(mode, idx, len, rnd) {
+    if (len <= 0) return -1;
+    if (mode === 'file') return idx;
+    if (mode === 'shuffle') { if (len === 1) return 0; let k = Math.floor((rnd == null ? Math.random() : rnd) * (len - 1)); if (k >= idx) k++; return Math.min(k, len - 1); }
+    if (idx < len - 1) return idx + 1;
+    return mode === 'list' ? 0 : -1;
+  }
+  // Picture controls: values are percentages (100 = unchanged); rotate in degrees; flips are booleans. Returns the CSS filter / transform strings.
+  function pictureCss(p, boxW, boxH) {
+    const c = (v, lo, hi) => Math.min(hi, Math.max(lo, Number.isFinite(Number(v)) ? Number(v) : 100));
+    const filter = (c(p.brightness, 50, 150) === 100 && c(p.contrast, 50, 150) === 100 && c(p.saturation, 0, 200) === 100) ? ''
+      : `brightness(${c(p.brightness, 50, 150)}%) contrast(${c(p.contrast, 50, 150)}%) saturate(${c(p.saturation, 0, 200)}%)`;
+    const rot = [0, 90, 180, 270].includes(Number(p.rotate)) ? Number(p.rotate) : 0;
+    const k = rot === 90 || rot === 270 ? (boxW > 0 && boxH > 0 ? Math.min(boxW / boxH, boxH / boxW) : 0.56) : 1;
+    const parts = [];
+    if (rot) parts.push(`rotate(${rot}deg)`);
+    if (k !== 1) parts.push(`scale(${Math.round(k * 1000) / 1000})`);
+    if (p.flipH) parts.push('scaleX(-1)');
+    if (p.flipV) parts.push('scaleY(-1)');
+    return { filter, transform: parts.join(' ') };
+  }
+  // A-B loop state machine: none -> A set -> loop A..B -> none.
+  function abStep(state, nowSec) {
+    if (!state || state.stage === 'off') return { stage: 'a', a: nowSec, b: 0 };
+    if (state.stage === 'a') return nowSec > state.a + 0.2 ? { stage: 'loop', a: state.a, b: nowSec } : state;
+    return { stage: 'off', a: 0, b: 0 };
+  }
+
+  return { nextIndex, pictureCss, abStep, VIDEO, AUDIO, SPEEDS, LIMITS, extOf, kindOf, titleOf, isUrl, mediaUrl, clock, vttTime, srtToVtt, assToSrt, subtitleToVtt, resumeAction, pushRecent, addBookmark, sortedBookmarks, limitResume, playable };
 });

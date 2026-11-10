@@ -8,7 +8,7 @@
 #endif
 
 #ifndef MyAppVersion
-  #define MyAppVersion "2.3.0"
+  #define MyAppVersion "2.3.1"
 #endif
 #define MyAppName "Opsis Media Suite"
 #define MyAppExeName "Opsis Media Suite.exe"

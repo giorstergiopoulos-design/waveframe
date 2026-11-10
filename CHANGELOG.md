@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.3.1 — Media Player Pro hand-over: ledger, archive, small player features
+- **docs/MPP-MIGRATION-LEDGER.md**: every Media Player Pro item (menu commands, data files, open issues of its changelog, the user's requests found in its conversation, TASKS-MASTER §4 / §18 / §19, plan Section 4) with its state in the Suite: done / roadmap / rejected (with the reason), a "MPP item → where it is in the Suite" table and an explicit list of what was NOT carried over.
+- **docs/mpp-archive/**: the Media Player Pro README, CHANGELOG, release notes 1.2.0–1.6.1, converter notes, 16 screenshots and the icon (copied read-only; the MPP repo itself is untouched).
+- **Roadmap**: WAVEFRAME_ROADMAP.md has a new section with everything that is still open from MPP (small / medium / large).
+- **Video tab**: repeat list / file / shuffle, stop after current, frame step (`.` `,`), A-B loop (`L`), snapshot to PNG at full size (`S`), brightness / contrast / saturation, rotate and flip, file info (codec, size, tracks — needs FFmpeg), 4× speed. 19 new texts in 20 languages; unit tests for the repeat / picture / A-B logic.
+
 ## 2.3.0 — Opsis Media Suite takes over Media Player Pro
 Includes everything of the (unpublished) 2.2.0 rename: the product is now **Opsis Media Suite**, the AppId, the settings folder and the storage keys did not change.
 - **Video tab** (from Media Player Pro): playlist, resume where you stopped, bookmarks, recent files, saved playlists and M3U import, speed, full screen, keyboard shortcuts, subtitles (SRT / VTT / ASS found next to the video or chosen by hand, Greek Windows-1253 files too, delay, size and colour), and the Suite's equaliser on the video's sound. Local files stream through a read-only `wfmedia:` protocol (only media and subtitle extensions); URLs play directly. "Open with" for video files.
