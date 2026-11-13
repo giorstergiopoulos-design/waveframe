@@ -8,7 +8,11 @@ const fs = require('fs');
 const path = require('path');
 
 const OWNER = 'giorstergiopoulos-design';
-const SELF_REPO = 'waveframe';
+// The repository was renamed waveframe -> OpsisMediaSuite (GitHub redirects the old name, but every URL it returns carries the NEW name). Both names
+// are the same repository for all trust checks, so old and new clients, old links and the embedded catalogue keep working.
+const SELF_REPO = 'OpsisMediaSuite';
+const REPO_ALIASES = [['opsismediasuite', 'waveframe']];
+const repoKey = (r) => { const k = String(r || '').toLowerCase(); const g = REPO_ALIASES.find((a) => a.includes(k)); return g ? g[0] : k; };
 const CATALOGUE_URL = 'https://raw.githubusercontent.com/giorstergiopoulos-design/Opsis/master/suite/apps.json';
 const CATALOGUE_MAX_BYTES = 256 * 1024;
 const RELEASE_MAX_BYTES = 1024 * 1024;
@@ -118,7 +122,8 @@ const DOWNLOAD_OPTS = { hosts: API_HOSTS, suffixes: ['.githubusercontent.com'] }
 
 function isRepoPageUrl(url, repo) {
   if (!isAllowedUrl(url, { hosts: ['github.com'] })) return false;
-  return new URL(url).pathname.toLowerCase().startsWith(`/${OWNER}/${repo}`.toLowerCase());
+  const m = /^\/([^/]+)\/([^/]+)(\/|$)/.exec(new URL(url).pathname);
+  return !!m && m[1].toLowerCase() === OWNER.toLowerCase() && repoKey(m[2]) === repoKey(repo);
 }
 
 /* ------------------------------ catalogue ------------------------------ */
@@ -213,7 +218,7 @@ function findInstalled(app, { entries = [], exists = () => false, env = {} }) {
   const want = app.uninstallDisplayName.toLowerCase();
   const hit = entries.find((e) => {
     const n = e.displayName.toLowerCase();
-    // "Waveframe 1.6.0" (electron-builder appends the version); require a word boundary so "Opsis" does not match "Opsis Media Player Pro".
+    // "Waveframe 1.6.0" (electron-builder appends the version); require a word boundary so "Opsis" does not match "Opsis Media Suite".
     return n === want || (n.startsWith(want + ' ') && /^v?\d/.test(n.slice(want.length + 1)));
   });
   let exePath = null;
@@ -247,7 +252,8 @@ function pickInstaller(release, app) {
 // Only files of THIS repository's own releases are ever downloaded as an update.
 function isTrustedReleaseDownload(url, repo) {
   if (!isAllowedUrl(url, { hosts: ['github.com'] })) return false;
-  return new URL(url).pathname.startsWith(`/${OWNER}/${repo}/releases/download/`);
+  const m = /^\/([^/]+)\/([^/]+)\/releases\/download\//.exec(new URL(url).pathname);
+  return !!m && m[1] === OWNER && repoKey(m[2]) === repoKey(repo);
 }
 function findChecksumAsset(release, installerName) {
   return (release && release.assets || []).find((a) => a.name === installerName + '.sha256') || null;
@@ -376,7 +382,7 @@ function downloadVerified(url, destPath, { expectedSha256, expectedSize = 0, max
 
 module.exports = {
   powershellEnv,
-  OWNER, SELF_REPO, CATALOGUE_URL, CATALOGUE_MAX_BYTES, API_HOSTS, DOWNLOAD_OPTS,
+  OWNER, SELF_REPO, repoKey, CATALOGUE_URL, CATALOGUE_MAX_BYTES, API_HOSTS, DOWNLOAD_OPTS,
   parseVersion, compareVersions, isNewer, majorMinor,
   STATE_DEFAULTS, sanitizeState, createStore, shouldShowWelcome, shouldNotify,
   isAllowedUrl, isRepoPageUrl, validateCatalogue,

@@ -69,38 +69,6 @@
       }
     },
     {
-      "id": "appearance",
-      "name": "Opsis Appearance",
-      "repo": "OpsisAppearance",
-      "installerAsset": "^OpsisAppearance-Setup\\.exe$",
-      "checksumAsset": "OpsisAppearance-Setup.exe.sha256",
-      "uninstallDisplayName": "Opsis Appearance",
-      "paths": [
-        "%LocalAppData%\\Programs\\Opsis Appearance\\OpsisAppearance.exe",
-        "%AppData%\\Opsis\\plugins\\Opsis Appearance\\OpsisAppearancePlugin.dll"
-      ],
-      "tagline": {
-        "en": "Change the look of Windows itself",
-        "el": "Αλλάξτε την εμφάνιση των ίδιων των Windows"
-      },
-      "capabilities": {
-        "en": [
-          "Automatic light/dark theme at sunrise/sunset, accent from your wallpaper",
-          "Translucent and rounded taskbar, Mica/Acrylic for every window",
-          "Theme Manager with import/export of full themes",
-          "Wallpaper slideshow and Explorer/taskbar behaviour settings",
-          "Restore point and backup vault before intrusive changes"
-        ],
-        "el": [
-          "Αυτόματο light/dark με ανατολή/δύση, accent από το wallpaper",
-          "Διάφανη και στρογγυλεμένη γραμμή εργασιών, Mica/Acrylic σε κάθε παράθυρο",
-          "Theme Manager με εισαγωγή/εξαγωγή πλήρων θεμάτων",
-          "Slideshow wallpaper και ρυθμίσεις συμπεριφοράς Εξερευνητή/taskbar",
-          "Σημείο επαναφοράς και αντίγραφο ασφαλείας πριν από παρεμβατικές αλλαγές"
-        ]
-      }
-    },
-    {
       "id": "gearwin",
       "name": "GearWin",
       "repo": "GearWin",
@@ -129,38 +97,6 @@
           "Επισκευή υγείας (SFC/DISM), καθαριστής μητρώου, αντίγραφα και σημεία επαναφοράς",
           "Εργαλεία ασφάλειας και απορρήτου, tweaks των Windows με ασφαλή αναίρεση",
           "Βιβλιοθήκη παιχνιδιών, ρυθμίσεις ανά παιχνίδι· 14 γλώσσες"
-        ]
-      }
-    },
-    {
-      "id": "mediaplayer",
-      "name": "Opsis Media Player Pro",
-      "repo": "OpsisMediaPlayerPro",
-      "installerAsset": "^OpsisMediaPlayerPro-Setup\\.exe$",
-      "checksumAsset": "OpsisMediaPlayerPro-Setup.exe.sha256",
-      "uninstallDisplayName": "Opsis Media Player Pro",
-      "paths": [
-        "%LocalAppData%\\Programs\\Opsis Media Player Pro\\OpsisMediaPlayerPro.exe",
-        "%ProgramFiles%\\Opsis Media Player Pro\\OpsisMediaPlayerPro.exe"
-      ],
-      "tagline": {
-        "en": "Fast video and audio player on the VLC engine",
-        "el": "Γρήγορος player βίντεο και ήχου με τον κινητήρα του VLC"
-      },
-      "capabilities": {
-        "en": [
-          "Plays almost any format, streams, DVD folders and cameras",
-          "Media Player Classic / VLC style controls and shortcuts",
-          "Subtitle download and automatic sync",
-          "Equalizer and audio effects, output-device and channel selection",
-          "Themes with light/dark button, MP4/MP3 conversion"
-        ],
-        "el": [
-          "Παίζει σχεδόν κάθε μορφή, streams, φακέλους DVD και κάμερες",
-          "Χειριστήρια και συντομεύσεις σαν Media Player Classic / VLC",
-          "Λήψη υποτίτλων και αυτόματος συγχρονισμός",
-          "Equalizer και εφέ ήχου, επιλογή συσκευής εξόδου και καναλιών",
-          "Θέματα με κουμπί σκούρου/φωτεινού, μετατροπή σε MP4/MP3"
         ]
       }
     },
@@ -197,7 +133,7 @@
     {
       "id": "waveframe",
       "name": "Opsis Media Suite",
-      "repo": "waveframe",
+      "repo": "OpsisMediaSuite",
       "installerAsset": "^(OpsisMediaSuite-Setup-|Waveframe\\.Setup\\.).*\\.exe$",
       "checksumAsset": null,
       "uninstallDisplayName": "Opsis Media Suite",

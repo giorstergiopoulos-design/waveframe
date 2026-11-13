@@ -1,13 +1,12 @@
 'use strict';
-// IPC glue for the 2.3.0 features taken over from Opsis Media Player Pro: the video player (file picker, subtitle discovery, a read-only
-// "wfmedia" protocol with range support), the photo editor (open / save) and the Media Player Pro importer (scan, backup, M3U playlists).
-// Only the main window may call these channels; payloads are validated here. Media Player Pro's own folder is only ever READ.
+// IPC glue for the video player (file picker, subtitle discovery, a read-only "wfmedia" protocol with range support), the photo editor (open / save)
+// and M3U playlist import. Only the main window may call these channels; payloads are validated here.
 
 const { ipcMain, dialog, protocol, net, app } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
-const M = require('./mpp-import.js');
+const M3U = require('./m3u.js');
 
 const VIDEO_EXTS = ['mp4', 'm4v', 'mkv', 'webm', 'mov', 'avi', 'wmv', 'flv', 'mpg', 'mpeg', 'ts', 'm2ts', 'ogv', '3gp'];
 const AUDIO_EXTS = ['mp3', 'wav', 'flac', 'ogg', 'oga', 'opus', 'm4a', 'aac', 'wma', 'aiff', 'aif'];
@@ -122,24 +121,8 @@ function init({ getMainWin, resolveFfmpegPath }) {
     try { fs.writeFileSync(r.filePath, Buffer.from(req.bytes instanceof ArrayBuffer ? req.bytes : req.bytes.buffer)); return { ok: true, file: r.filePath }; } catch (_) { return { ok: false }; }
   });
 
-  /* ---------------- Media Player Pro importer ---------------- */
-  ipcMain.handle('mpp:scan', (e) => {
-    if (!trusted(e)) return { found: false };
-    const r = M.scan(M.defaultDir());
-    return r;
-  });
-  ipcMain.handle('mpp:backup', (e, snapshot) => {
-    if (!trusted(e)) return { ok: false };
-    try {
-      const snap = snapshot && typeof snapshot === 'object' && !Array.isArray(snapshot) ? Object.fromEntries(Object.entries(snapshot).filter(([k, v]) => k.startsWith('waveframe.') && typeof v === 'string' && v.length < 5 * 1024 * 1024)) : {};
-      const b = M.backup(M.defaultDir(), backupRoot(), snap);
-      bk.dir = b.dir;
-      return { ok: true, dir: b.dir, copied: b.copied };
-    } catch (_) { return { ok: false }; }
-  });
-  ipcMain.handle('mpp:report', (e, report) => (trusted(e) && bk.dir && report && typeof report === 'object' ? M.writeReport(bk.dir, report) : false));
-  // WAVEFRAME_SELFTEST: the real renderer plays a generated clip through wfmedia: with its subtitle, edits a generated photo, and scans a
-  // synthetic Media Player Pro folder (APPDATA is pointed at a temp folder for the duration) - the source must stay byte-identical.
+  // WAVEFRAME_SELFTEST: the real renderer plays a generated clip through wfmedia: with its subtitle, edits a generated photo, and audits the layout.
+  // generated clip (APPDATA is not touched).
   async function selfTest() {
     const out = []; const check = (name, ok, extra) => out.push({ name, ok: !!ok, extra: ok ? extra : (extra || 'failed') });
     const win = getMainWin(); const os = require('os'); const crypto = require('crypto');
@@ -190,32 +173,9 @@ function init({ getMainWin, resolveFfmpegPath }) {
       await js("(() => { document.getElementById('phRotR').click(); return 1; })()");
       await new Promise((r) => setTimeout(r, 200));
       check('photo editor rotates 90 degrees (64x48 -> 48x64)', await js("document.getElementById('phCanvas').width === 48 && document.getElementById('phCanvas').height === 64"));
-      /* Media Player Pro importer */
-      const mdir = path.join(dir, 'AppData', 'MediaPlayerPro'); fs.mkdirSync(mdir, { recursive: true });
-      fs.writeFileSync(path.join(mdir, 'recent.txt'), 'C:\\Videos\\a.mp4\r\nC:\\Videos\\b.mkv\r\n');
-      fs.writeFileSync(path.join(mdir, 'bookmarks.txt'), 'C:\\Videos\\a.mp4|4000\r\n');
-      fs.writeFileSync(path.join(mdir, 'settings.json'), JSON.stringify({ Languages: 'el,en', OsApiKey: 'SECRET-KEY', SubFontSize: 20 }));
-      const hash = () => fs.readdirSync(mdir).sort().map((n) => n + crypto.createHash('sha256').update(fs.readFileSync(path.join(mdir, n))).digest('hex')).join('|');
-      const h0 = hash(); const oldAppData = process.env.APPDATA; process.env.APPDATA = path.join(dir, 'AppData');
-      try {
-        await js("document.querySelector('.tab-btn[data-tab=\"settings\"]').click(); loadMppImport().then(() => 1)");
-        await until("!!window.WaveframeMpp", 8000);
-        await js("document.getElementById('mppScan').click(); 1");
-        const shown = await until("document.querySelectorAll('#mppResult input[data-cat]').length >= 3", 6000);
-        const rows = await js("[...document.querySelectorAll('#mppResult input[data-cat]')].map((c) => c.dataset.cat).join(',')");
-        const notes = await js("document.querySelector('#mppResult .mpp-notes') ? document.querySelector('#mppResult .mpp-notes').textContent : ''");
-        check('Media Player Pro importer finds the data and lists the categories and what is not carried over', shown && /recent/.test(rows) && /bookmarks/.test(rows) && /subtitles/.test(rows) && /settings\.json/.test(notes), rows + ' | ' + notes.slice(0, 80));
-        await js("document.getElementById('mppImport').click(); 1");
-        const done = await until("/\\d/.test(document.getElementById('mppStatus').textContent) && document.getElementById('mppImport').disabled === false && !!localStorage.getItem('waveframe.mppImport')", 10000);
-        const stored = await js("JSON.stringify({ recent: JSON.parse(localStorage.getItem('waveframe.video.recent') || '[]').length, bm: JSON.parse(localStorage.getItem('waveframe.video.bookmarks') || '[]').length, secret: Object.keys(localStorage).some((k) => (localStorage.getItem(k) || '').includes('SECRET-KEY')) })");
-        const st = JSON.parse(stored);
-        check('import merges only what was ticked, never the service credentials', done && st.recent === 3 && st.bm === 1 && st.secret === false, stored);
-        const bdir = path.join(app.getPath('userData'), 'backups');
-        const made = fs.existsSync(bdir) && fs.readdirSync(bdir).some((n) => n.startsWith('mpp-import-') && fs.existsSync(path.join(bdir, n, 'source', 'recent.txt')) && fs.existsSync(path.join(bdir, n, 'waveframe-before.json')) && fs.existsSync(path.join(bdir, n, 'report.json')));
-        check('a backup of the source files and of the Suite settings plus a report were written first', made);
-        check('Media Player Pro folder is byte-identical after scan + import', hash() === h0);
-      } finally { process.env.APPDATA = oldAppData; }
-    /* layout of the three new areas in all 20 languages, at 100 % and 150 % zoom: no overlapping controls, no clipped button text, no sideways scroll */
+    } catch (e) { check('media self-test threw', false, e && e.stack || e); }
+    try {
+      /* layout of the three new areas in all 20 languages, at 100 % and 150 % zoom: no overlapping controls, no clipped button text, no sideways scroll */
     try {
       const audit = `(async () => {
         const tabs = ['video', 'photo', 'settings'], bad = [];
@@ -256,11 +216,11 @@ function init({ getMainWin, resolveFfmpegPath }) {
     return out;
   }
 
-  ipcMain.handle('mpp:pick-m3u', async (e) => {
+  ipcMain.handle('vp:pick-m3u', async (e) => {
     if (!trusted(e)) return [];
     const r = await dialog.showOpenDialog(getMainWin(), { properties: ['openFile', 'multiSelections'], filters: [{ name: 'Playlists', extensions: ['m3u', 'm3u8'] }] });
     if (r.canceled) return [];
-    return r.filePaths.slice(0, 20).map(M.readM3uFile).filter(Boolean);
+    return r.filePaths.slice(0, 20).map(M3U.readM3uFile).filter(Boolean);
   });
 
   return { selfTest };

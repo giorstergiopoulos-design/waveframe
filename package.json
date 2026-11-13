@@ -1,7 +1,7 @@
 {
   "name": "waveframe",
-  "version": "2.3.1",
-  "description": "Opsis Media Suite - audio enhancer, converter and video encoder (formerly Waveframe)",
+  "version": "2.3.2",
+  "description": "Opsis Media Suite - audio enhancer, converter, video player and photo editor",
   "main": "main.js",
   "author": "giorstergiopoulos-design",
   "homepage": "https://github.com/giorstergiopoulos-design/waveframe",
@@ -10,7 +10,7 @@
     "start": "electron .",
     "dist": "electron-builder --win",
     "smoke-test": "node smoke-test.js",
-    "test": "node --test test/video.test.js test/video.real.test.js test/audiolib.test.js test/suite.test.js test/convert.test.js test/convert.real.test.js test/i18n.test.js test/security.test.js test/update-helper.test.js test/mpp-import.test.js test/photo.test.js test/videoplayer.test.js",
+    "test": "node --test test/video.test.js test/video.real.test.js test/audiolib.test.js test/suite.test.js test/convert.test.js test/convert.real.test.js test/i18n.test.js test/security.test.js test/update-helper.test.js test/m3u.test.js test/photo.test.js test/videoplayer.test.js",
     "selftest": "node selftest.js"
   },
   "devDependencies": {
@@ -38,10 +38,10 @@
       "conv-main.js",
       "conv-video.js",
       "media-main.js",
-      "mpp-import.js",
       "suite-apps.json",
       "icon.ico",
-      "renderer/**/*"
+      "renderer/**/*",
+      "m3u.js"
     ],
     "asarUnpack": [
       "node_modules/music-metadata/**/*",

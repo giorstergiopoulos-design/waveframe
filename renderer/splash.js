@@ -5,7 +5,7 @@
 (async function () {
   const api = window.splashApi;
   const $ = (id) => document.getElementById(id);
-  const PAGES = 6;
+  const PAGES = 8;
   const init = await api.init();
   if (!init) return;
 

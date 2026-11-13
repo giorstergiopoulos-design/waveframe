@@ -770,12 +770,11 @@ document.querySelectorAll('.tab-btn').forEach((btn) => {
     if (btn.dataset.tab === 'player') resizeCanvas();
     if (btn.dataset.tab === 'converter') loadConverter();
     if (btn.dataset.tab === 'video') loadVideoPlayer();
-    if (btn.dataset.tab === 'settings') loadMppImport();
     if (btn.dataset.tab === 'photo') loadPhoto();
   });
 });
 
-/* Video player, photo editor and the Media Player Pro importer (2.3.0) are fetched the first time they are needed. */
+/* Video player and photo editor are fetched the first time they are needed. */
 const lazyScripts = {};
 function loadScripts(key, files) {
   if (lazyScripts[key]) return lazyScripts[key];
@@ -785,7 +784,6 @@ function loadScripts(key, files) {
 }
 function loadVideoPlayer() { return loadScripts('video', ['vplib.js', 'videoplayer.js']); }
 function loadPhoto() { return loadScripts('photo', ['photolib.js', 'photo.js']); }
-function loadMppImport() { return loadScripts('mpp', ['mpplib.js', 'mppui.js']); }
 function showTab(name) { const b = document.querySelector(`.tab-btn[data-tab="${name}"]`); if (b) b.click(); }
 // "Open with" a video file (installer option / command line) or a video dropped on the window: show the video tab and play it
 window.waveframe.onOpenVideo((filePath) => { showTab('video'); loadVideoPlayer().then(() => window.WaveframeVideoPlayer.open(filePath)); });

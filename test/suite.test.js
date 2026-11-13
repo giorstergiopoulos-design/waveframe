@@ -72,7 +72,7 @@ const embedded = fs.readFileSync(path.join(__dirname, '..', 'suite-apps.json'), 
 test('the embedded fallback catalogue validates and contains waveframe', () => {
   const r = S.validateCatalogue(embedded);
   assert.equal(r.ok, true);
-  assert.equal(r.apps.length, 7);
+  assert.deepEqual(r.apps.map((a) => a.id).sort(), ['gearwin', 'kombos', 'newscrawler', 'opsis', 'waveframe'], 'the family is exactly the catalogue: Opsis, Crawler, GearWin, Kombos, Opsis Media Suite');
   const wf = r.apps.find((a) => a.id === 'waveframe');
   assert.ok(wf.tagline.el && wf.tagline.en && wf.capabilities.en.length >= 3);
 });
@@ -125,13 +125,9 @@ test('install detection: registry entries, word-boundary names, whitelisted env 
     'HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\abc',
     '    DisplayName    REG_SZ    Opsis Media Suite 1.6.0',
     '    DisplayVersion    REG_SZ    1.6.0',
-    '',
-    'HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\def',
-    '    DisplayName    REG_SZ    Opsis Media Player Pro',
-    '    DisplayVersion    REG_SZ    2.0.0',
   ].join('\r\n');
   const entries = S.parseUninstallOutput(reg);
-  assert.equal(entries.length, 2);
+  assert.equal(entries.length, 1);
   const apps = S.validateCatalogue(embedded).apps;
   const env = { LocalAppData: 'C:\\Users\\u\\AppData\\Local', ProgramFiles: 'C:\\Program Files' };
   const wf = S.findInstalled(apps.find((a) => a.id === 'waveframe'), { entries, exists: () => false, env });
@@ -139,9 +135,7 @@ test('install detection: registry entries, word-boundary names, whitelisted env 
   const opsisVsSuite = S.findInstalled(apps.find((a) => a.id === 'opsis'), { entries: [entries[0]], exists: () => false, env });
   assert.equal(opsisVsSuite.installed, false, '"Opsis" must not match "Opsis Media Suite"');
   const opsis = S.findInstalled(apps.find((a) => a.id === 'opsis'), { entries, exists: () => false, env });
-  assert.equal(opsis.installed, false, '"Opsis" must not match "Opsis Media Player Pro"');
-  const mp = S.findInstalled(apps.find((a) => a.id === 'mediaplayer'), { entries, exists: () => false, env });
-  assert.equal(mp.version, '2.0.0');
+  assert.equal(opsis.installed, false, '"Opsis" must not match "Opsis Media Suite"');
   const exe = 'C:\\Users\\u\\AppData\\Local\\Programs\\Kombos\\Kombos.exe';
   const byPath = S.findInstalled(apps.find((a) => a.id === 'kombos'), { entries: [], exists: (p) => p === exe, env });
   assert.deepEqual([byPath.installed, byPath.version, byPath.exePath], [true, '', exe]);
@@ -303,4 +297,26 @@ test('update helper script: waits for the app, re-checks the SHA-256, runs the s
   assert.throws(() => S.buildUpdateScript({ pid: '1; calc', setupPath: 'x', sha256: 'a'.repeat(64), exePaths: ['y'] }));
   assert.throws(() => S.buildUpdateScript({ pid: 1, setupPath: 'x', sha256: 'zz', exePaths: ['y'] }));
   assert.equal(S.psQuote("a'b"), "'a''b'");
+});
+
+
+test('repository rename: waveframe and OpsisMediaSuite are the same repository for release pages and update downloads (2.3.2)', () => {
+  const dl = (repo, tag = 'v2.3.1') => `https://github.com/${S.OWNER}/${repo}/releases/download/${tag}/OpsisMediaSuite-Setup-2.3.1.exe`;
+  for (const self of ['OpsisMediaSuite', 'waveframe']) {
+    for (const url of [dl('OpsisMediaSuite'), dl('waveframe'), dl('opsismediasuite')]) assert.equal(S.isTrustedReleaseDownload(url, self), true, url + ' vs ' + self);
+    assert.equal(S.isRepoPageUrl(`https://github.com/${S.OWNER}/OpsisMediaSuite/releases/tag/v2.3.1`, self), true);
+    assert.equal(S.isRepoPageUrl(`https://github.com/${S.OWNER}/waveframe/releases/tag/v2.3.1`, self), true);
+  }
+  assert.equal(S.SELF_REPO, 'OpsisMediaSuite');
+  assert.equal(S.isTrustedReleaseDownload(dl('OpsisMediaSuiteX'), 'OpsisMediaSuite'), false, 'a longer name is another repository');
+  assert.equal(S.isTrustedReleaseDownload(dl('Opsis'), 'OpsisMediaSuite'), false);
+  assert.equal(S.isTrustedReleaseDownload(dl('OpsisMediaSuite').replace(S.OWNER, 'attacker'), 'OpsisMediaSuite'), false);
+  assert.equal(S.isRepoPageUrl(`https://github.com/${S.OWNER}/OpsisMediaPlayerPro/releases`, 'OpsisMediaSuite'), false);
+  const rel = { tag_name: 'v2.3.1', html_url: `https://github.com/${S.OWNER}/OpsisMediaSuite/releases/tag/v2.3.1`, draft: false, prerelease: false, body: '', assets: [
+    { name: 'OpsisMediaSuite-2.3.1.exe', size: 1, browser_download_url: dl('OpsisMediaSuite').replace('Setup-', '') },
+    { name: 'OpsisMediaSuite-Setup-2.3.1.exe', size: 1, digest: 'sha256:' + 'b'.repeat(64), browser_download_url: dl('OpsisMediaSuite') },
+    { name: 'Waveframe.Setup.2.3.1.exe', size: 1, digest: 'sha256:' + 'b'.repeat(64), browser_download_url: dl('OpsisMediaSuite').replace('OpsisMediaSuite-Setup', 'Waveframe.Setup') } ] };
+  const tr = S.trimRelease(rel, 'waveframe');     // what the 2.2.0 / 2.3.1 clients ask for
+  assert.ok(tr, 'a release whose URLs carry the new repository name is accepted when asked for by the old name');
+  assert.equal(S.pickInstaller(tr, S.validateCatalogue(embedded).apps.find((a) => a.id === 'waveframe')).name, 'OpsisMediaSuite-Setup-2.3.1.exe', 'the portable exe is never picked');
 });

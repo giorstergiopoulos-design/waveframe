@@ -53,8 +53,8 @@ test('every key referenced by the code exists in the Greek reference', () => {
     for (const m of s.matchAll(/\bt\(\s*['"]([\w.]+)['"]/g)) used.add(m[1]);
     for (const m of s.matchAll(/\btr\(\s*['"]([\w.]+)['"]/g)) used.add(m[1]);
   }
-  // keys built from a pattern in splash.js (splash.p1..p6.*) and converter.js (conv.st.*, conv.preset.*)
-  for (let i = 1; i <= 6; i++) for (const s of ['title', 'intro', 'l']) used.add(`splash.p${i}.${s}`);
+  // keys built from a pattern in splash.js (splash.p1..p8.*) and converter.js (conv.st.*, conv.preset.*)
+  for (let i = 1; i <= 8; i++) for (const s of ['title', 'intro', 'l']) used.add(`splash.p${i}.${s}`);
   for (const s of ['wait', 'work', 'done', 'cancelled']) used.add(`conv.st.${s}`);
   for (const s of ['low', 'medium', 'high', 'lossless']) used.add(`conv.preset.${s}`);
   for (const s of ['youtube1080', 'youtube4k', 'webSmall', 'archiveH265', 'device', 'webm', 'gif', 'audioOnly']) used.add(`vid.preset.${s}`);

@@ -1,6 +1,6 @@
 'use strict';
 
-document.getElementById('helpVersion').textContent = `v${window.waveframe?.version || '2.3.1'}`;
+document.getElementById('helpVersion').textContent = `v${window.waveframe?.version || '2.3.2'}`;
 document.getElementById('licenseYear').textContent = String(new Date().getFullYear());
 
 window.waveframe?.onThemeSync?.((theme) => {
@@ -37,33 +37,26 @@ for (const [k, v] of Object.entries(window.WAVEFRAME_LICENSES || {})) { const el
   const ul = document.getElementById('changelogV210');
   if (ul && typeof I18N !== 'undefined') {
     const pick = (k) => (I18N[lang] && I18N[lang][k]) || I18N.en[k] || I18N.el[k];
-    for (let i = 1; i <= 4; i++) { const li = document.createElement('li'); li.textContent = pick(`help.v210.${i}`); ul.appendChild(li); }
+    for (let i = 1; i <= 3; i++) { const li = document.createElement('li'); li.textContent = pick(`help.v210.${i}`); ul.appendChild(li); }
   }
 }
 
-{
-  const lang = new URLSearchParams(location.search).get('lang') || 'el';
-  const ul = document.getElementById('changelogV220');
-  if (ul && typeof I18N !== 'undefined') {
-    const pick = (k) => (I18N[lang] && I18N[lang][k]) || I18N.en[k] || I18N.el[k];
-    for (let i = 1; i <= 3; i++) { const li = document.createElement('li'); li.textContent = pick(`help.v220.${i}`); ul.appendChild(li); }
-  }
-}
 
 {
   const lang = new URLSearchParams(location.search).get('lang') || 'el';
   const ul = document.getElementById('changelogV230');
   if (ul && typeof I18N !== 'undefined') {
     const pick = (k) => (I18N[lang] && I18N[lang][k]) || I18N.en[k] || I18N.el[k];
-    for (let i = 1; i <= 3; i++) { const li = document.createElement('li'); li.textContent = pick(`help.v230.${i}`); ul.appendChild(li); }
+    for (let i = 1; i <= 2; i++) { const li = document.createElement('li'); li.textContent = pick(`help.v230.${i}`); ul.appendChild(li); }
   }
 }
 
+
 {
   const lang = new URLSearchParams(location.search).get('lang') || 'el';
-  const ul = document.getElementById('changelogV231');
+  const ul = document.getElementById('changelogV232');
   if (ul && typeof I18N !== 'undefined') {
     const pick = (k) => (I18N[lang] && I18N[lang][k]) || I18N.en[k] || I18N.el[k];
-    const li = document.createElement('li'); li.textContent = pick('help.v231.1'); ul.appendChild(li);
+    const li = document.createElement('li'); li.textContent = pick('help.v232.1'); ul.appendChild(li);
   }
 }

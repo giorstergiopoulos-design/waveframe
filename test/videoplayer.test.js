@@ -60,7 +60,7 @@ test('subtitle bytes: UTF-8, UTF-8 BOM and Windows-1253 (Greek) all decode', () 
 test('the main process side only serves media and subtitles, never other file types', () => {
   const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'media-main.js'), 'utf8');
   assert.match(src, /SERVE_EXTS = new Set\(\[\.\.\.VIDEO_EXTS, \.\.\.AUDIO_EXTS, \.\.\.SUB_EXTS\]\)/);
-  for (const ch of ['vp:pick', 'vp:subs-for', 'vp:pick-sub', 'vp:exists', 'photo:pick', 'photo:read', 'photo:save', 'mpp:scan', 'mpp:backup', 'mpp:report', 'mpp:pick-m3u']) {
+  for (const ch of ['vp:pick', 'vp:subs-for', 'vp:pick-sub', 'vp:exists', 'photo:pick', 'photo:read', 'photo:save', 'vp:pick-m3u']) {
     const i = src.indexOf(`'${ch}'`); assert.ok(i > 0, ch);
     assert.ok(/trusted\(e\)/.test(src.slice(i, i + 220)), ch + ' checks the sender');
   }

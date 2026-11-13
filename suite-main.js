@@ -29,13 +29,16 @@ function init({ getMainWin, getTheme, isMini, isTrusted, onLang }) {
   function embeddedCatalogue() {
     return S.validateCatalogue(fs.readFileSync(path.join(__dirname, 'suite-apps.json'), 'utf8'));
   }
+  // apps that left the family: a cached or older copy of the catalogue must not bring them back
+  const RETIRED_IDS = new Set(['mediaplayer', 'appearance']);
+  const withoutRetired = (v) => ({ ...v, apps: (v.apps || []).filter((a) => !RETIRED_IDS.has(a.id)) });
   function loadCatalogue() {
     try {
       const c = JSON.parse(fs.readFileSync(CAT_CACHE(), 'utf8'));
       const v = S.validateCatalogue(String(c.raw || ''));
-      if (v.ok) return { ...v, source: 'cache', at: Number(c.at) || 0 };
+      if (v.ok) return { ...withoutRetired(v), source: 'cache', at: Number(c.at) || 0 };
     } catch (_) { /* no cache yet */ }
-    return { ...embeddedCatalogue(), source: 'embedded', at: 0 };
+    return { ...withoutRetired(embeddedCatalogue()), source: 'embedded', at: 0 };
   }
   async function refreshCatalogue() {
     const cur = loadCatalogue();
@@ -382,7 +385,7 @@ function init({ getMainWin, getTheme, isMini, isTrusted, onLang }) {
       check('embedded catalogue valid', embeddedCatalogue().ok);
       lang = 'en';
       await openSplash('welcome');
-      check('welcome window opens and renders 6 pages', await waitFor(async () => (await js('document.querySelectorAll(".page").length')) === 6));
+      check('welcome window opens and renders 8 pages', await waitFor(async () => (await js('document.querySelectorAll(".page").length')) === 8));
       check('welcome text is localised (no raw keys)', !/splash\./.test(await js('document.body.innerText')));
       check('welcome shows the version', (await js('document.body.innerText')).includes(app.getVersion()));
       await js('document.getElementById("btnNext").click()');

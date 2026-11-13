@@ -868,7 +868,7 @@ body.mini-mode #bgCanvas { display: none; }
 .vid-row > .small-btn { grid-column: 4; grid-row: 1; }
 .vid-row > .conv-bar { grid-row: 2; }
 
-/* ---- video player, photo editor, Media Player Pro import (2.3.0) ---- */
+/* ---- video player, photo editor (2.3.0) ---- */
 .vp-layout, .ph-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 340px); gap: 14px; align-items: start; }
 .vp-frame, .ph-drop { position: relative; background: #000; border-radius: 10px; overflow: hidden; min-height: 280px; display: flex; align-items: center; justify-content: center; }
 .vp-video { width: 100%; max-height: 52vh; background: #000; display: none; }

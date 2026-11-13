@@ -1,5 +1,5 @@
 'use strict';
-// Video player tab (2.3.0, taken over from Opsis Media Player Pro): playlist, resume position, bookmarks, recent files, saved playlists,
+// Video player tab (2.3.0): playlist, resume position, bookmarks, recent files, saved playlists,
 // subtitles (SRT/VTT/ASS next to the video or chosen by hand, delay, size, colour) and the Suite's equaliser on the video's sound.
 // Local files stream through the read-only wfmedia: protocol of the main process; the pure helpers live in vplib.js (unit-tested).
 
@@ -180,7 +180,7 @@
     say(fmt(t('vp.plSaved'), { name }));
   }
   async function importM3u() {
-    const lists = await api.mppPickM3u(); if (!lists.length) return;
+    const lists = await api.vpPickM3u(); if (!lists.length) return;
     const all = get(K.playlists, {}); let n = 0;
     for (const l of lists) { all[l.name] = l.items; n++; }
     put(K.playlists, all); fillPlaylists();

@@ -8,10 +8,11 @@
 #endif
 
 #ifndef MyAppVersion
-  #define MyAppVersion "2.3.1"
+  #define MyAppVersion "2.3.2"
 #endif
 #define MyAppName "Opsis Media Suite"
 #define MyAppExeName "Opsis Media Suite.exe"
+#define PreReleaseAppId "{B3E7A5D1-4C62-4F08-9A7E-2D51C8F06B94}"
 #define OldAppId "{6F1D2C84-3B7A-4E59-A0C2-9D4E8B5A17F3}"   ; the AppId never changes: the product was renamed, not replaced
 #define MySourceDir "..\release\win-unpacked"
 
@@ -136,11 +137,23 @@ begin
     Exec(Exe, Args, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 end;
 
+// The unpublished local 2.2.0 build was installed with an AppId of its own. This setup replaces it: its uninstaller runs first (silently), the settings
+// in %AppData%\waveframe are not touched, and the files go to the same Program Files folder again.
+procedure UninstallLocalPreRelease;
+var
+  Key, Cmd: String;
+begin
+  Key := 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{#PreReleaseAppId}_is1';
+  if RegQueryStringValue(HKLM64, Key, 'UninstallString', Cmd) or RegQueryStringValue(HKLM32, Key, 'UninstallString', Cmd) or RegQueryStringValue(HKCU, Key, 'UninstallString', Cmd) then
+    RunUninstaller(Cmd, '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART');
+end;
+
 procedure RemoveOldInstalls;
 var
   Root: Integer;
   Cmd, Dummy: String;
 begin
+  UninstallLocalPreRelease;
   if OldProductUninstaller(Root, Cmd) then
     RunUninstaller(Cmd, '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART');
   // the NSIS installer of 1.6 / 1.7
